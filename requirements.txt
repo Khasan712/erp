@@ -1,0 +1,13 @@
+asgiref==3.5.2
+Django==3.2.4
+django-cors-headers==3.13.0
+djangorestframework==3.14.0
+djangorestframework-simplejwt==5.2.2
+PyJWT==2.6.0
+pytz==2022.6
+sqlparse==0.4.3
+django-environ==0.9.0
+PyMySQL==1.0.2
+celery==5.2.7
+django-import-export==3.0.1
+

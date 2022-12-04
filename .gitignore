@@ -9,6 +9,7 @@ __pycache__/
 # Distribution / packaging
 .Python
 build/
+migrations/
 develop-eggs/
 dist/
 downloads/
@@ -58,7 +59,7 @@ coverage.xml
 # Django stuff:
 *.log
 local_settings.py
-db.sqlite3
+../db.sqlite3
 db.sqlite3-journal
 
 # Flask stuff:
@@ -95,13 +96,14 @@ ipython_config.py
 __pypackages__/
 
 # Celery stuff
-celerybeat-schedule
+ERP_MASTER/celerybeat-schedule
 celerybeat.pid
 
 # SageMath parsed files
 *.sage.py
 
 # Environments
+../.env
 .env
 .venv
 env/
@@ -109,6 +111,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+env
 
 # Spyder project settings
 .spyderproject
@@ -127,3 +130,19 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+
+# Static files
+static/
+staticfiles/
+# Media
+media/
+# Run
+web_run.sh
+
+#Docker files
+#Dockerfile
+#docker-compose.yml
+
+# MySQL
+/erp_mysql
