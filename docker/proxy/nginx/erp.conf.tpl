@@ -1,6 +1,6 @@
 server {
     listen: 80;
-    server_name: ${DOMAIN};
+    server_name: backend.jmb-inventory-system.com;
 
     location /.well-known/acme-challange/ {
         root /vol/www/;

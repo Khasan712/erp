@@ -4,7 +4,7 @@ upstream django {
 
 server {
     listen: 80;
-    server_name: ${DOMAIN};
+    server_name: backend.jmb-inventory-system.com;
 
     location /.well-known/acme-challange/ {
         root /vol/www/;
@@ -17,10 +17,10 @@ server {
 
 server {
     listen 443 ssl;
-    server_name: ${DOMAIN};
+    server_name: backend.jmb-inventory-system.com;
 
-    ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/backend.jmb-inventory-system.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/backend.jmb-inventory-system.com/privkey.pem;
 
     include /etc/nginx/options-ssl-nginx.conf;
 

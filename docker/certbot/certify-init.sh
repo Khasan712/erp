@@ -14,7 +14,7 @@ echo "Getting certificate ..."
 certbot certonly \
     --webroot \
     --webroot-path "/vol/www/" \
-    -d "$DOMAIN" \
+    -d "backend.jmb-inventory-system.com" \
     --email "$EMAIL" \
     --rsa-key-size 4096 \
     --agree-tos \
