@@ -1,3 +1,6 @@
+upstream django {
+    server app:8000;
+}
 
 server {
     listen: 80;
@@ -30,8 +33,7 @@ server {
     }
 
     location / {
-        uwsgi_pass ${APP_HOST}:${APP_PORT};
-        include /etc/nginx/uwsgi_params;
+        proxy_pass http://django;
         client_max_body_size 10M;
     }
 }
