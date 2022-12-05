@@ -3,7 +3,7 @@ server {
     server_name: backend.jmb-inventory-system.com;
 
     location /.well-known/acme-challange/ {
-        root /vol/www/;
+        root /var/www/;
     }
 
     location / {

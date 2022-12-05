@@ -1,11 +1,11 @@
-#!/bin/bash
+#!/bin/sh
 
 set -e
 
 echo "Checking for dhparams.pem"
 if [ ! -f "/vol/proxy/ssl-dhparams.pem" ]; then
   echo "dhparams.pem does not exist - crating it"
-  openssl dhparam -out /vol/proxy/ssl-dhparams.pem 2048
+  openssl dhparam -out /var/proxy/ssl-dhparams.pem 2048
 fi
 
 # Avoid replacing these with envsubst

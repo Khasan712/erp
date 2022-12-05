@@ -101,7 +101,10 @@ class ContractSerializer(serializers.ModelSerializer):
                 'last_name': instance.create_by.last_name,
             }
         if response.get('supplier'):
-            response['supplier'] = instance.supplier.name
+            response['supplier'] = {
+                'id': instance.supplier.id,
+                'name': instance.supplier.name,
+            }
         return response
 
 
@@ -142,26 +145,30 @@ class ContractGetSerializer(serializers.ModelSerializer):
         )
 
     def to_representation(self, instance):
-        response = super(ContractGetSerializer, self).to_representation(instance)
+        response = super(ContractSerializer, self).to_representation(instance)
         if response.get('category_manager'):
             response['category_manager'] = {
                 'id': instance.category_manager.id,
                 'first_name': instance.category_manager.first_name,
+                'last_name': instance.category_manager.last_name,
             }
         if response.get('contract_owner'):
             response['contract_owner'] = {
                 'id': instance.contract_owner.id,
                 'first_name': instance.contract_owner.first_name,
+                'last_name': instance.contract_owner.last_name,
             }
         if response.get('lawyer'):
             response['lawyer'] = {
                 'id': instance.lawyer.id,
                 'first_name': instance.lawyer.first_name,
+                'last_name': instance.lawyer.last_name,
             }
         if response.get('project_owner'):
             response['project_owner'] = {
                 'id': instance.project_owner.id,
                 'first_name': instance.project_owner.first_name,
+                'last_name': instance.project_owner.last_name,
             }
         if response.get('parent_agreement'):
             response['parent_agreement'] = {
@@ -170,18 +177,31 @@ class ContractGetSerializer(serializers.ModelSerializer):
                 'contract_number': instance.parent_agreement.contract_number,
             }
         if response.get('departement'):
-            response['departement'] = instance.departement.name
+            response['departement'] = {
+                'id': instance.departement.id,
+                'name': instance.departement.name,
+            }
         if response.get('category'):
-            response['category'] = instance.category.name
+            response['category'] = {
+                'id': instance.category.id,
+                'name': instance.category.name,
+            }
         if response.get('currency'):
-            response['currency'] = instance.currency.name
+            response['currency'] = {
+                'id': instance.currency.id,
+                'name': instance.currency.name,
+            }
         if response.get('create_by'):
             response['create_by'] = {
                 'id': instance.create_by.id,
                 'first_name': instance.create_by.first_name,
+                'last_name': instance.create_by.last_name,
             }
         if response.get('supplier'):
-            response['supplier'] = instance.supplier.name
+            response['supplier'] = {
+                'id': instance.supplier.id,
+                'name': instance.supplier.name,
+            }
         return response
 
 
