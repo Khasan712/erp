@@ -35,6 +35,8 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)
+        email = User.objects.get(email=request.data.get('email'))
+        serializer.validated_data['role'] = email.role
         return Response(serializer.validated_data)
 
 class CreateSourcDirectorOriganizationAPI(APIView):
