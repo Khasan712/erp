@@ -27,7 +27,7 @@ SECRET_KEY = os.environ['SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = bool(int(os.environ.get('DEBUG', 0)))
-print(DEBUG)
+
 ALLOWED_HOSTS = [] if DEBUG else os.environ['ALLOWED_HOSTS'].split(' ')
 
 
@@ -47,6 +47,7 @@ INSTALLED_APPS += [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
+    'import_export',
 ]
 
 # project apps
@@ -116,9 +117,9 @@ else:
             'PASSWORD': os.environ['MYSQL_PASSWORD'],
             'HOST': '' if DEBUG else os.environ['MYSQL_DATABASE_HOST'],
             'PORT': '3306',
-            # 'PORT': os.environ['MYSQL_DATABASE_PORT'],
-        }
+          # 'PORT': os.environ['MYSQL_DATABASE_PORT'],
     }
+}
 
 
 # Password validation
