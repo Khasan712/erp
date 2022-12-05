@@ -145,7 +145,7 @@ class ContractGetSerializer(serializers.ModelSerializer):
         )
 
     def to_representation(self, instance):
-        response = super(ContractSerializer, self).to_representation(instance)
+        response = super(ContractGetSerializer, self).to_representation(instance)
         if response.get('category_manager'):
             response['category_manager'] = {
                 'id': instance.category_manager.id,
