@@ -181,6 +181,15 @@ class ContractListView(APIView):
 
     def post(self, request):
         try:
+            if not self.request.user.role != 'contract_administrator':
+                return Response(
+                    {
+                        'success': False,
+                        'message': 'You do not have permission.',
+                        'error': 'Error occurred.',
+                        'data': []
+                    }, status=status.HTTP_400_BAD_REQUEST
+                )
             data = self.request.data
             service_choice = data.get('serviceCommodityConsultant')
             items = data.get('items')
