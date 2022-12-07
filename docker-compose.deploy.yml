@@ -8,6 +8,8 @@ services:
     restart: always
     env_file:
       - .env
+    depends_on:
+      - mysql
 
 
   nginx:
@@ -40,6 +42,58 @@ services:
       - certbot-certs:/etc/letsencrypt
     depends_on:
       - nginx
+
+
+  mysql:
+    image: mysql:latest
+    build:
+      context: .
+    container_name: erp_mysql
+    env_file:
+      - .env
+    volumes:
+      - /tmp/erp/mysqld:/var/run/mysqld
+      - ./erp_mysql:/var/lib/mysql
+
+
+  redis:
+    container_name: erp_redis
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    depends_on:
+      - mysql
+      - app
+
+
+  celery-worker:
+    container_name: erp_celery_worker
+    restart: always
+    build:
+      context: .
+    command: celery -A ERP_MASTER worker -l info
+    volumes:
+      - .:/erp
+    depends_on:
+      - app
+      - redis
+      - mysql
+
+
+  celery-beat:
+    container_name: erp_celery_beat
+    restart: always
+    build:
+      context: .
+    command: celery -A ERP_MASTER beat -l info
+    volumes:
+      - .:/erp
+    depends_on:
+      - app
+      - redis
+      - celery-worker
+      - mysql
+
 
 volumes:
   certbot-web:

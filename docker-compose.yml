@@ -13,3 +13,39 @@ services:
       - "8000:8000"
     env_file:
       - .env
+
+
+  redis:
+    container_name: erp_redis
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    depends_on:
+      - app
+
+
+  celery-worker:
+    container_name: erp_celery_worker
+    restart: always
+    build:
+      context: .
+    command: celery -A ERP_MASTER worker -l info
+    volumes:
+      - .:/erp
+    depends_on:
+      - app
+      - redis
+
+
+  celery-beat:
+    container_name: erp_celery_beat
+    restart: always
+    build:
+      context: .
+    command: celery -A ERP_MASTER beat -l info
+    volumes:
+      - .:/erp
+    depends_on:
+      - app
+      - redis
+      - celery-worker

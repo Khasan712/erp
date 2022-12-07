@@ -10,7 +10,8 @@ from api.v1.suppliers.models import (
 class SupplierSerializer(serializers.ModelSerializer):
     class Meta:
         model = Supplier
-        fields = ('id', 'name', 'account', 'address', 'city','postal_code','country', 'bank_name','institution_number','transit_number','bank_account')
+        fields = ('id', 'name', 'address', 'city', 'postal_code', 'country', 'bank_name',
+                  'institution_number', 'transit_number', 'bank_account')
 
 
 class SupplierGetSerializer(serializers.ModelSerializer):

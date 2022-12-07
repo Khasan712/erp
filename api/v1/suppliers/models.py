@@ -29,6 +29,12 @@ class Supplier(models.Model):
     # Parent
     parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='parents')
 
+    def save(self, *args, **kwargs):
+        if self.account == '':
+            suppliers_qty = Supplier.objects.select_related('organization', 'create_by', 'supplier', 'parent').count()
+            self.account = suppliers_qty + 1
+        super().save(*args, **kwargs)
+
     def __str__(self) -> str:
         return f'{self.name}'
 

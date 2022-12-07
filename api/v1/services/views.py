@@ -1,11 +1,17 @@
 from django.db import transaction
-from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status, permissions
 from api.v1.commons.pagination import make_pagination
-from api.v1.commons.views import get_serializer_errors, not_serializer_is_valid, serializer_valid_response, exception_response, \
-    object_not_found_response, object_deleted_response, get_serializer_valid_response
+from api.v1.commons.views import (
+    get_serializer_errors,
+    not_serializer_is_valid,
+    serializer_valid_response,
+    exception_response,
+    object_not_found_response,
+    object_deleted_response,
+    get_serializer_valid_response
+)
 from api.v1.services.serializers import (
     ServiceSerializer, ServiceCommodityPostSerializers, CommodityPostSerializers,
     CommodityDocumentPostListSerializers, CommodityListSerializers,
@@ -17,8 +23,10 @@ from api.v1.services.models import (
     Commodity,
     Consultant, DocumentService, ServiceCommodity,
 )
-from api.v1.services.tasks import create_first_increase_terms, check_service_status, \
+from api.v1.services.tasks import (
+    create_first_increase_terms,
     check_organization_service_commodity_consultant_status
+)
 from api.v1.users.permissions import IsSourcingDirector, IsContractAdministrator
 from api.v1.users.services import make_errors
 from django.core.exceptions import ValidationError

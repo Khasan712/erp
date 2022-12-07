@@ -72,16 +72,14 @@ class SupplierListView(APIView):
             return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request):
-        serializer = SupplierSerializer(data = request.data)
-        if serializer.is_valid():
-            account = random.randint(10000, 99999)
-            if Supplier.objects.filter(account=account):
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            else:
-                serializer.save(account = account, Organization = request.user.organization, create_by = request.user)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            serializer = SupplierSerializer(data=request.data)
+            if not serializer.is_valid():
+                return Response(not_serializer_is_valid(serializer), status=status.HTTP_400_BAD_REQUEST)
+            serializer.save(organization_id=self.request.user.organization.id, create_by_id=self.request.user.id)
+            return Response(get_serializer_valid_response(serializer), status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
 
 
 class SuppliersDetail(APIView):

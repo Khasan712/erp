@@ -147,3 +147,6 @@ web_run.sh
 
 # MySQL
 /erp_mysql
+
+# local runserver
+local-runserver.sh
