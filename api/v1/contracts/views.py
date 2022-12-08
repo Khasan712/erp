@@ -36,7 +36,7 @@ from api.v1.contracts.models import (
     Contract_Type,
     Category,
     Cost_Center,
-    Currency, ContractTask
+    Currency, ContractTask, ConnectContractWithTask
 )
 from api.v1.users.services import make_errors
 from api.v1.users.permissions import (
@@ -181,7 +181,7 @@ class ContractListView(APIView):
 
     def post(self, request):
         try:
-            if not self.request.user.role != 'contract_administrator':
+            if self.request.user.role != 'contract_administrator':
                 return Response(
                     {
                         'success': False,
@@ -240,6 +240,16 @@ class ContractDetailView(APIView):
         contract_id = self.request.query_params.get('contract')
         return self.get_queryset().filter(id=contract_id).first()
 
+    def update_contract_tasks(self, tasks: list, contract_id: int):
+        contract_tasks = ConnectContractWithTask.objects.select_related('contract', 'task', 'executor', 'checker').filter(
+            contract_id=contract_id
+        )
+        with transaction.atomic():
+            for task in tasks:
+                contract_task = contract_tasks.filter(id=task.get('id')).first()
+                contract_task.is_done = task.get('is_done')
+                contract_task.save()
+
     def get(self, request):
         try:
             if self.get_object() is None:
@@ -262,17 +272,18 @@ class ContractDetailView(APIView):
                         "data": [],
                     }
                 )
-            serializer = ContractSerializer(self.get_object(), data=self.request.data, partial=True)
-            if not serializer.is_valid():
-                return Response(
-                    {
-                        "success": False,
-                        "message": 'Error occurred.',
-                        "error": make_errors(serializer.errors),
-                        "data": [],
-                    }
-                )
-            serializer.save(amendment=False)
+            data = self.request.data
+            contract_tasks = data.get('tasks')
+            service_commodity_consultant = data.get('serviceCommodityConsultant')
+            items = data.get('items')
+            serializer = ContractSerializer(self.get_object(), data=data, partial=True)
+            with transaction.atomic():
+                if not serializer.is_valid():
+                    raise get_serializer_errors(serializer)
+                serializer.save()
+                if contract_tasks is not None:
+                    self.update_contract_tasks(contract_tasks, serializer.data.get('id'))
+
         except Exception as e:
             return Response(
                 {
