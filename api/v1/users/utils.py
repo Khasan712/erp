@@ -51,7 +51,7 @@ def send_message_register(request, user_data):
     if settings.DEBUG:
         absurl = f'http://127.0.0.1:8000/email/verify/?token={token}'
     else:
-        absurl = f'https://www.jmb-inventory-system.com/email/verify/?token={token}'
+        absurl = f'https://www.{os.environ.get("SITE_DOMAIN")}/email/verify/?token={token}'
 
     body = f"<h1>Hi {user_data.get('first_name')}. You have successfully registered by " \
            f"{user_data.get('organization_name')} Organization. Please verify your email.</h1>"
@@ -62,7 +62,7 @@ def send_message_register(request, user_data):
     button_style = f"display: inline-block; text-decoration: none; color: white; padding: 20px 50px; " \
                    f"background-color: blue; border-radius: 10px;"
 
-    html_content = f"<a style={button_style} href='{absurl}?token={str(token)}'><button>Verify your email</button></a>"
+    html_content = f"<a style={button_style} href='{absurl}'><button>Verify your email</button></a>"
 
     subject = "Congratulations."
     text_body = f'{body} \n{login_password}'

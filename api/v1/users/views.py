@@ -106,7 +106,6 @@ class EmailVerify(APIView):
     def post(self, request):
         try:
             token = self.request.query_params.get('token')
-            # token = request.GET.get('token')
             payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
             user = User.objects.get(id=payload['user_id'])
             user.is_varified = True
