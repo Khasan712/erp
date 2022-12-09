@@ -6,6 +6,7 @@ from django.contrib.sites.shortcuts import get_current_site
 from rest_framework.reverse import reverse
 from rest_framework_simplejwt.tokens import RefreshToken
 from api.v1.suppliers.models import Supplier
+import os
 
 
 class Utils:
@@ -47,11 +48,10 @@ def send_message_to_suppliers(request, suppliers, sourcing_event):
 def send_message_register(request, user_data):
     user = User.objects.get(email=user_data.get('email'))
     token = RefreshToken.for_user(user).access_token
-    current_site = get_current_site(request).domain
     if settings.DEBUG:
-        absurl = f'http://{current_site}/email/verify/?token={token}'
+        absurl = f'http://127.0.0.1:8000/email/verify/?token={token}'
     else:
-        absurl = f'https://{current_site}/email/verify/?token={token}'
+        absurl = f'https://{os.environ.get("SITE_DOMAIN")}/email/verify/?token={token}'
 
     body = f"<h1>Hi {user_data.get('first_name')}. You have successfully registered by " \
            f"{user_data.get('organization_name')} Organization. Please verify your email.</h1>"
