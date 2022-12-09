@@ -1,3 +1,4 @@
+from api.v1.commons.views import not_serializer_is_valid, serializer_valid_response
 from api.v1.organization.serializers import OrganizationSerializer
 from rest_framework import status, generics, permissions
 from rest_framework.response import Response
@@ -149,24 +150,10 @@ class UserRegistrationView(generics.GenericAPIView):
             'password': data.get('password'),
         }
         if not serializer.is_valid():
-            return Response(
-                {
-                    "success": False,
-                    "message": 'Error occurred.',
-                    "error": make_errors(serializer.errors),
-                    "data": [],
-                }, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(not_serializer_is_valid(serializer), status=status.HTTP_400_BAD_REQUEST)
         serializer.save()
         send_message_register(request, user_data)
-        return Response(
-            {
-                "success": True,
-                "message": 'User created successfully.',
-                "error": [],
-                "data": serializer.data,
-            }, status=status.HTTP_201_CREATED
-        )
+        return Response(serializer_valid_response(serializer), status=status.HTTP_201_CREATED)
         
 
 class LogoutAPIView(generics.GenericAPIView):

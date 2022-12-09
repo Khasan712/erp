@@ -22,7 +22,7 @@ urlpatterns = [
     path('logout/', LogoutAPIView.as_view()),
     path('detail/<int:pk>/', DetailUserViews.as_view()),
     path('register/organization/', CreateSourcDirectorOriganizationAPI.as_view()),
-    path('email/verify/', EmailVerify.as_view(), name='email-verify'),
+    path('email/verify/', EmailVerify.as_view()),
     
     
     # path('token/', jwt_views.TokenObtainPairView.as_view(), name='token_obtain_pair'),

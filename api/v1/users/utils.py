@@ -1,4 +1,4 @@
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMessage, EmailMultiAlternatives
 from api.v1.sourcing.models import SourcingRequestEvent
 from django.conf import settings
 from api.v1.users.models import User
@@ -30,6 +30,7 @@ def send_message_to_suppliers(request, suppliers, sourcing_event):
         url_path = f'http://{current_site}{relative_link}'
     else:
         url_path = f'http://{current_site}{relative_link}'
+
     for supplier in suppliers:
         user_supplier = Supplier.objects.get(id=supplier.get('supplier'))
         supplier = User.objects.get(id=user_supplier.supplier.id)
@@ -47,19 +48,32 @@ def send_message_register(request, user_data):
     user = User.objects.get(email=user_data.get('email'))
     token = RefreshToken.for_user(user).access_token
     current_site = get_current_site(request).domain
-    relative_link = reverse('email-verify')
     if settings.DEBUG:
-        absurl = 'http://'+current_site+relative_link
+        absurl = f'http://{current_site}/email/verify/?token={token}'
     else:
-        absurl = 'https://'+current_site+relative_link
-    token = RefreshToken.for_user(user).access_token
-    body = f"Hi {user_data.get('first_name')}. You have successfully registered by {user_data.get('organization_name')}. \nPlease verify you email by bellow email.\n{absurl}?token={str(token)}"
-    login_password = f"Login: {user_data.get('email')} \nPassword: {user_data.get('password')}"
+        absurl = f'https://{current_site}/email/verify/?token={token}'
+
+    body = f"<h1>Hi {user_data.get('first_name')}. You have successfully registered by " \
+           f"{user_data.get('organization_name')} Organization. Please verify your email.</h1>"
+
+    login_password = f"<p>Login: {user_data.get('email')}</p>" \
+                     f"<p>Password: {user_data.get('password')}</p>"
+
+    button_style = f"display: inline-block; text-decoration: none; color: white; padding: 20px 50px; " \
+                   f"background-color: blue; border-radius: 10px;"
+
+    html_content = f"<a style={button_style} href='{absurl}?token={str(token)}'><button>Verify your email</button></a>"
+
+    subject = "Congratulations."
+    text_body = f'{body} \n{login_password}'
+    to = [user_data.get('email')]
+
     email = EmailMessage(
-        body=f"{body} \n{login_password}",
-        subject=f"Congratulations.",
-        to=[user_data.get('email')],
+        body=f'{text_body} \n{html_content}',
+        subject=subject,
+        to=to
     )
+    email.content_subtype = 'html'
     email.send()
 
 
