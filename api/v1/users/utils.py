@@ -51,7 +51,7 @@ def send_message_register(request, user_data):
     if settings.DEBUG:
         absurl = f'http://127.0.0.1:8000/email/verify/?token={token}'
     else:
-        absurl = f'https://www.{os.environ.get("SITE_DOMAIN")}/email/verify/?token={token}'
+        absurl = f'https://www.jmb-inventory-system.com/email/verify/?token={token}'
 
     body = f"<h1>Hi {user_data.get('first_name')}. You have successfully registered by " \
            f"{user_data.get('organization_name')} Organization. Please verify your email.</h1>"
