@@ -11,7 +11,7 @@ class SupplierSerializer(serializers.ModelSerializer):
     class Meta:
         model = Supplier
         fields = ('id', 'name', 'address', 'city', 'postal_code', 'country', 'bank_name',
-                  'institution_number', 'transit_number', 'bank_account')
+                  'institution_number', 'transit_number', 'bank_account', 'supplier')
 
 
 class SupplierGetSerializer(serializers.ModelSerializer):
