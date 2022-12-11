@@ -15,23 +15,25 @@ from .history_contract_models import HistoryContract
 @receiver(post_save, sender=Contract)
 def create_notification(sender, instance, created, **kwargs):
     if created:
-        send_email_day = instance.expiration_date - datetime.timedelta(days=instance.contract_notice)
-        with transaction.atomic():
-            ContractNotificationDay.objects.create(
-                contract_id=instance.id, send_email_day=send_email_day
-            )
-            if instance.notification:
-                last_n_day = ContractNotificationDay.objects.filter(contract_id=instance.id).last()
-                enterval_days = instance.expiration_date - last_n_day.send_email_day
-                for d in range(1, int(enterval_days.days)+1):
-                    if d % instance.notification == 0:
-                        if last_n_day.send_email_day + datetime.timedelta(days=instance.notification) <= instance.expiration_date:
-                            last_n_day = ContractNotificationDay.objects.filter(contract_id=instance.id).last()
-                            new = ContractNotificationDay(
-                                contract_id=instance.id,
-                                send_email_day=last_n_day.send_email_day + datetime.timedelta(days=instance.notification)
-                            )
-                            new.save()
+        if instance.contract_notice and instance.notification:
+            instance.duration = 
+            send_email_day = instance.expiration_date - datetime.timedelta(days=instance.contract_notice)
+            with transaction.atomic():
+                ContractNotificationDay.objects.create(
+                    contract_id=instance.id, send_email_day=send_email_day
+                )
+                if instance.notification:
+                    last_n_day = ContractNotificationDay.objects.filter(contract_id=instance.id).last()
+                    enterval_days = instance.expiration_date - last_n_day.send_email_day
+                    for d in range(1, int(enterval_days.days)+1):
+                        if d % instance.notification == 0:
+                            if last_n_day.send_email_day + datetime.timedelta(days=instance.notification) <= instance.expiration_date:
+                                last_n_day = ContractNotificationDay.objects.filter(contract_id=instance.id).last()
+                                new = ContractNotificationDay(
+                                    contract_id=instance.id,
+                                    send_email_day=last_n_day.send_email_day + datetime.timedelta(days=instance.notification)
+                                )
+                                new.save()
 
     # if not created:
     #     history = ContractHistory(
