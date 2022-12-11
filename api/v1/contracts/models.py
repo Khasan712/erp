@@ -153,7 +153,7 @@ class Contract(models.Model):
     def get_tasks(self):
         contract_tasks = ConnectContractWithTask.objects.select_related(
             'contract', 'task', 'executor', 'checker',
-        ).filter(contract_id=self.id).values('task__name', 'is_done')
+        ).filter(contract_id=self.id).values('id', 'task__name', 'is_done')
         return contract_tasks if contract_tasks else None
 
     @property
