@@ -16,7 +16,7 @@ from .history_contract_models import HistoryContract
 def create_notification(sender, instance, created, **kwargs):
     if created:
         if instance.contract_notice and instance.notification:
-            instance.duration = 
+            # instance.duration =
             send_email_day = instance.expiration_date - datetime.timedelta(days=instance.contract_notice)
             with transaction.atomic():
                 ContractNotificationDay.objects.create(
