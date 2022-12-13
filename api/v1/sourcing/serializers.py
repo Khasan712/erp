@@ -311,4 +311,8 @@ class SourcingRequestAssignedListSerializer(serializers.ModelSerializer):
         fields = ('id', 'assigned')
 
 
+class GetSupplierSourcingEvents(serializers.ModelSerializer):
+    class Meta:
+        model = SourcingRequestEvent
+        fields = ('id', 'creator', 'title', 'text',)
 
