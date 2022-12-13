@@ -41,6 +41,7 @@ from api.v1.users.permissions import (
 )
 from ..contracts.models import Contract
 from ..contracts.serializers import ContractGetSerializer
+from ..sourcing.models import SourcingRequestEventSuppliers
 
 
 class SupplierListView(APIView):
@@ -368,11 +369,24 @@ class GetContractsBySupplierID(APIView):
 
     def get(self, request):
         try:
-            params = self.request.query_params
-            supplier_id = int(params.get('supplier'))
-            supplier = User.objects.select_related('organization').get(id=supplier_id)
+            user = self.request.user
             contracts = Contract.objects.select_related(
                 'parent_agreement', 'departement', 'category', 'currency', 'organization', 'create_by', 'supplier'
+            ).filter(supplier__supplier_id=user.id)
+        except Exception as e:
+            return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(make_pagination(self.request, ContractGetSerializer, contracts), status=status.HTTP_200_OK)
+
+
+class SourcingEventBySupplierID(APIView):
+    permission_classes = (permissions.IsAuthenticated, IsSupplier)
+
+    def get(self, request):
+        try:
+            user = self.request.user
+            events = SourcingRequestEventSuppliers.objects.select_related(
+                'supplier', 'sourcingRequestEvent',
             ).filter(supplier_id=supplier.id)
         except Exception as e:
             return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)

@@ -465,7 +465,6 @@ class SourcingEventGetByParamsAPIView(APIView):
         if sourcing_request:
             sourcing_events = sourcing_events.filter(sourcing_request_id=sourcing_request, general_status='sourcing_event')
             return sourcing_events
-        # if
         match suppliers_infos_questionaries:
             case 'suppliers':
                 suppliers = SourcingRequestEventSuppliers.objects.select_related(
