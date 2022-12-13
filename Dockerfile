@@ -10,3 +10,7 @@ RUN pip install --upgrade pip && \
 COPY ./entrypoint.sh /entrypoint.sh
 #COPY ./local-runserver.sh /local-runserver.sh
 ENTRYPOINT ["sh", "/entrypoint.sh"]
+
+EXPOSE 8000
+
+CMD ["gunicorn", "--bind", ":8000", "--workers", "3", "config.wsgi"]

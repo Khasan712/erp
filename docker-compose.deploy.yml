@@ -12,36 +12,36 @@ services:
       - mysql
 
 
-  nginx:
-    build:
-      context: ./docker/proxy
-    container_name: nginx
-    restart: always
-    depends_on:
-      - app
-    ports:
-      - '80:80'
-      - '443:443'
-    volumes:
-      - certbot-web:/var/www
-      - proxy-dhparams:/var/nginx
-      - certbot-certs:/etc/letsencrypt
-    env_file:
-      - .env
+  # nginx:
+  #   build:
+  #     context: ./docker/proxy
+  #   container_name: nginx
+  #   restart: always
+  #   depends_on:
+  #     - app
+  #   ports:
+  #     - '80:80'
+  #     - '443:443'
+  #   volumes:
+  #     - certbot-web:/var/www
+  #     - proxy-dhparams:/var/nginx
+  #     - certbot-certs:/etc/letsencrypt
+  #   env_file:
+  #     - .env
 
 
-  certbot:
-    build:
-      context: ./docker/certbot
-    container_name: certbot
-    command: echo "Skipping ..."
-    env_file:
-      - .env
-    volumes:
-      - certbot-web:/var/www
-      - certbot-certs:/etc/letsencrypt
-    depends_on:
-      - nginx
+  # certbot:
+  #   build:
+  #     context: ./docker/certbot
+  #   container_name: certbot
+  #   command: echo "Skipping ..."
+  #   env_file:
+  #     - .env
+  #   volumes:
+  #     - certbot-web:/var/www
+  #     - certbot-certs:/etc/letsencrypt
+  #   depends_on:
+  #     - nginx
 
 
   mysql:
