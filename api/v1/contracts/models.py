@@ -160,7 +160,7 @@ class Contract(models.Model):
     def get_documents(self):
         contract_documents = DocumentContact.objects.select_related(
             'contract'
-        ).filter(contract_id=self.id).values('document',)
+        ).filter(contract_id=self.id).values('id', 'document',)
         return contract_documents if contract_documents else None
 
 

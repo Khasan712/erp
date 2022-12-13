@@ -6,6 +6,7 @@ from api.v1.suppliers.views import (
     SuppliersQuestionaryView,
     SupplierQuestionaryAnswerView,
     SupplierStatisticsView,
+    GetContractsBySupplierID
 )
 
 urlpatterns = [
@@ -14,5 +15,6 @@ urlpatterns = [
     path('questionary/', SuppliersQuestionaryView.as_view()),
     path('answers/', SupplierQuestionaryAnswerView.as_view()),
     path('statistics/', SupplierStatisticsView.as_view()),
+    path('contracts/', GetContractsBySupplierID.as_view()),
     path('masscreate', SupplierMassCreate.as_view()),
 ]

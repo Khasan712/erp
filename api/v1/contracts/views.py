@@ -42,7 +42,7 @@ from api.v1.users.services import make_errors
 from api.v1.users.permissions import (
     IsAdmin,
     IsContractAdministrator,
-    IsSourcingDirector
+    IsSourcingDirector, IsSupplier
 )
 
 
@@ -624,11 +624,7 @@ class ContractListDetailView(APIView):
         return Response(status = status.HTTP_204_NO_CONTENT)
 
 
-
 class MassUploadView(APIView):
-
-
-    # Works fine
 
     def post(self, request):
         serializer = MassUploadSerializer(data = request.data)
@@ -636,5 +632,9 @@ class MassUploadView(APIView):
         file = pd.read_excel(file)
         file = pd.DataFrame(data=file)
         for i in range(0, len(file)):
-            Contract.objects.create(name= file.iloc[i][0], description = file.iloc[i][1], organization = request.user.organization)
+            Contract.objects.create(name= file.iloc[i][0], description=file.iloc[i][1], organization=request.user.organization)
         return Response("ok")
+
+
+
+

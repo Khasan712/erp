@@ -10,7 +10,7 @@ class IsAdmin(BasePermission):
             # if request.method in SAFE_METHODS:
             return request.user.role == "admin"
         
-    
+
 class IsContractAdministrator(BasePermission):
     message = "You must be the contract administrator of this web site"
     def has_permission(self, request, view):
