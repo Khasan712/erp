@@ -21,7 +21,9 @@ class Supplier(models.Model):
     postal_code = models.CharField(max_length=10)
     country = models.CharField(max_length=70)
     supplier_status = models.CharField(max_length=8, choices=SupplierStatusChoice.choices(), default='active')
-    # banking information's 
+    # banking information's
+    billing_address = models.CharField(max_length=255, blank=True, null=True)
+    same_billing_address = models.BooleanField(default=False)
     bank_name = models.CharField(max_length=50, blank=True, null=True)
     transit_number = models.CharField(max_length=15, blank=True, null=True)
     institution_number = models.CharField(max_length=10, blank=True, null=True)
@@ -33,6 +35,8 @@ class Supplier(models.Model):
         if self.account == '':
             suppliers_qty = Supplier.objects.select_related('organization', 'create_by', 'supplier', 'parent').count()
             self.account = suppliers_qty + 1
+        if self.parent is not None and self.same_billing_address:
+            self.billing_address = self.parent.billing_address
         super().save(*args, **kwargs)
 
     def __str__(self) -> str:

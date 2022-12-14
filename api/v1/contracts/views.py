@@ -16,7 +16,7 @@ import jwt
 
 from api.v1.commons.pagination import make_pagination
 from api.v1.commons.views import exception_response, get_serializer_errors, get_serializer_valid_response, \
-    object_not_found_response
+    object_not_found_response, serializer_valid_response
 from api.v1.users.models import User
 from django.conf import settings
 from api.v1.contracts.serializers import (
@@ -169,6 +169,26 @@ class ContractListView(APIView):
                             get_serializer_errors(consultant_serializer)
                         consultant_serializer.save(contract_id=contract_id, creator_id=creator)
 
+    def validate_contract_structure(self, data):
+        contract_structure = data.get('contract_structure')
+        match contract_structure:
+            case 'Stand Alone':
+                if data.get('parent_agreement') is not None:
+                    return 'Can not be parent agreement.'
+            case 'Master Agreement':
+                if data.get('parent_agreement') is not None:
+                    return 'Can not be parent agreement.'
+            case 'Sub Agreement':
+                if data.get('parent_agreement') is None:
+                    return 'Choose parent agreement.'
+                if data.get('parent_agreement') is not None:
+                    contract_structure_of_parent_agreement = self.get_queryset().get(id=data.get('parent_agreement'))
+                    if contract_structure_of_parent_agreement.contract_structure != 'Master Agreement':
+                        return 'Contract structure must be Master Agreement in Parent agreement.'
+            case '':
+                return 'Choose contract structure.'
+        return True
+
     def get(self, request):
         try:
             return Response(
@@ -194,6 +214,9 @@ class ContractListView(APIView):
             service_choice = data.get('serviceCommodityConsultant')
             items = data.get('items')
             with transaction.atomic():
+                print(self.validate_contract_structure(data))
+                if self.validate_contract_structure(data) is not True:
+                    raise ValidationError(self.validate_contract_structure(data))
                 serializer = ContractSerializer(data=data)
                 if not serializer.is_valid():
                     raise ValidationError(message=f'{make_errors(serializer.errors)}')
@@ -211,21 +234,12 @@ class ContractListView(APIView):
                     self.create_service_choices(service_choice, items, serializer.data.get('id'))
         except Exception as e:
             return Response(
-                {
-                    "success": False,
-                    "message": 'Error occurred.',
-                    "error": str(e),
-                    "data": [],
-                }, status=status.HTTP_400_BAD_REQUEST
+                exception_response(e), status=status.HTTP_400_BAD_REQUEST
             )
-        return Response(
-            {
-                "success": True,
-                "message": 'Successfully created Contract.',
-                "error": [],
-                "data": serializer.data,
-            }, status=status.HTTP_201_CREATED
-        )
+        else:
+            return Response(
+                serializer_valid_response(serializer), status=status.HTTP_201_CREATED
+            )
 
 
 class ContractDetailView(APIView):

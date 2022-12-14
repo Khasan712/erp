@@ -77,6 +77,9 @@ class SupplierListView(APIView):
 
     def post(self, request):
         try:
+            if request.data.get('same_billing_address') is True and request.data.get('parent') is not None:
+                parent_billing_address = self.get_queryset().get(id=request.data.get('parent'))
+                request.data['billing_address'] = parent_billing_address.billing_address
             serializer = SupplierSerializer(data=request.data)
             if not serializer.is_valid():
                 return Response(not_serializer_is_valid(serializer), status=status.HTTP_400_BAD_REQUEST)
