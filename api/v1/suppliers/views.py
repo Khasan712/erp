@@ -57,10 +57,10 @@ class SupplierListView(APIView):
         supplier_status = params.get('status')
         if q is not None:
             queryset = queryset.filter(
-                Q(supplier__first_name__icontains=q) | Q(name__icontains=q) | Q(account__icontains=q) |
-                Q(address__icontains=q) | Q(city__icontains=q) | Q(postal_code__icontains=q) | Q(country__icontains=q) |
-                Q(supplier_status__icontains=q) | Q(bank_name__icontains=q) | Q(transit_number__icontains=q) |
-                Q(institution_number__icontains=q) | Q(bank_account__icontains=q)
+                Q(supplier__first_name__icontains=q) | Q(supplier__last_name__icontains=q) | Q(name__icontains=q) |
+                Q(account__icontains=q) | Q(address__icontains=q) | Q(city__icontains=q) | Q(postal_code__icontains=q)
+                | Q(country__icontains=q) | Q(supplier_status__icontains=q) | Q(bank_name__icontains=q) |
+                Q(transit_number__icontains=q) | Q(institution_number__icontains=q) | Q(bank_account__icontains=q)
             )
         if supplier_status is not None:
             queryset = queryset.filter(supplier_status__in=supplier_status.split(','))
