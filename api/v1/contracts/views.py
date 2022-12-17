@@ -570,7 +570,7 @@ class DepartmentListDetailView(APIView):
 
 # APi for category :
 class CategoryListView(APIView):
-    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator)
+    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator | IsSupplier)
 
     def get_queryset(self):
         queryset = Category.objects.select_related('organization').filter(

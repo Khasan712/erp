@@ -27,8 +27,8 @@ SECRET_KEY = os.environ['SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = bool(int(os.environ.get('DEBUG', 0)))
-
-ALLOWED_HOSTS = ['*', ] if DEBUG else os.environ['ALLOWED_HOSTS'].split(' ')
+ALLOWED_HOSTS = ['*', ]
+# ALLOWED_HOSTS = ['*', ] if DEBUG else os.environ['ALLOWED_HOSTS'].split(' ')
 
 
 # Application definition
@@ -112,15 +112,14 @@ if DEBUG:
 else:
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': os.environ['MYSQL_DATABASE'],
-            'USER': os.environ['MYSQL_USER'],
-            'PASSWORD': os.environ['MYSQL_PASSWORD'],
-            'HOST': '' if DEBUG else os.environ['MYSQL_DATABASE_HOST'],
-            'PORT': '3306',
-          # 'PORT': os.environ['MYSQL_DATABASE_PORT'],
+            'ENGINE': os.environ.get('DB_ENGINE'),
+            'NAME': os.environ['DB_NAME'],
+            'USER': os.environ['DB_USER'],
+            'PASSWORD': os.environ['DB_PASSWORD'],
+            'HOST': os.environ.get('DB_HOST'),
+            'PORT': os.environ['DB_PORT'],
+        }
     }
-}
 
 
 # Password validation
@@ -261,8 +260,8 @@ CSRF_TRUSTED_ORIGINS = os.environ['CORS_ALLOWED_ORIGINS'].split(' ')
 # SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 # SECURE_HSTS_PRELOAD = True
 # SECURE_SSL_REDIRECT = True
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+# SESSION_COOKIE_SECURE = True
+# CSRF_COOKIE_SECURE = True
 
 # Email configurations
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

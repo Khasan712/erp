@@ -13,7 +13,7 @@ from .enums import SupplierStatusChoice
 class Supplier(models.Model):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     create_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='creator')
-    supplier = models.ForeignKey(User, on_delete=models.CASCADE, related_name='supplier_user')
+    supplier = models.OneToOneField(User, on_delete=models.CASCADE, related_name='supplier_user')
     name = models.CharField(max_length=75, unique=True)
     account = models.CharField(max_length=20, unique=True)
     address = models.CharField(max_length=100)

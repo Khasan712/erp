@@ -1,18 +1,55 @@
 version: '3.9'
+
 services:
-  app:
+  web:
     build:
       context: .
-    container_name: app
-    command: sh -c "python manage.py migrate &&
-                    python manage.py makemigrations &&
-                    python manage.py runserver 0.0.0.0:8000"
+    container_name: web
+    restart: always
     volumes:
       - .:/app
-    ports:
-      - "8000:8000"
+      - static_files:/app/staticfiles
+      - static:/app/static
+      - media:/app/media
+      - /tmp/app/mysqld:/run/mysqld
     env_file:
       - .env
+    depends_on:
+      - mysql
+
+
+  nginx:
+    build: ./nginx
+    container_name: nginx
+    restart: always
+    volumes:
+      - ./nginx/conf/:/etc/nginx/conf.d/
+      - static_files:/home/app/staticfiles/
+      - static:/home/app/static/
+      - media:/home/app/media/
+    depends_on:
+      - web
+    ports:
+      - 1080:80
+      - 10443:443
+    env_file:
+      - .env
+
+
+  mysql:
+    image: mysql:latest
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+    volumes:
+      - /tmp/app/mysqld:/var/run/mysqld
+      - ./erp_mysql:/var/lib/mysql
+    ports:
+      - 3307:3306
 
 
   redis:
@@ -21,7 +58,8 @@ services:
     ports:
       - "6379:6379"
     depends_on:
-      - app
+      - mysql
+      - web
 
 
   celery-worker:
@@ -29,12 +67,13 @@ services:
     restart: always
     build:
       context: .
-    command: celery -A ERP_MASTER worker -l info
+    command: celery -A config worker -l info
     volumes:
-      - .:/erp
+      - .:/web
     depends_on:
-      - app
+      - web
       - redis
+      - mysql
 
 
   celery-beat:
@@ -42,10 +81,18 @@ services:
     restart: always
     build:
       context: .
-    command: celery -A ERP_MASTER beat -l info
+    command: celery -A config beat -l info
     volumes:
-      - .:/erp
+      - .:/web
     depends_on:
-      - app
+      - web
       - redis
       - celery-worker
+      - mysql
+
+
+volumes:
+  static_files:
+  static:
+  media:
+
