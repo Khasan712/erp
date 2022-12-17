@@ -21,7 +21,6 @@ class DateTimeMixin(models.Model):
         abstract = True
 
 
-
 class Notification(DateTimeMixin):
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notification_sender')
     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notification_receiver')
@@ -33,8 +32,6 @@ class Notification(DateTimeMixin):
     url_path = models.URLField(blank=True, null=True)
     is_read = models.BooleanField(default=False)
     text = models.TextField(blank=True, null=True)
-    
-    
 
 
 class Chat(DateTimeMixin):
@@ -90,7 +87,6 @@ class ChatPersonal(DateTimeMixin, models.Model):
         return self.chatmessage_set.filter(is_active=True, is_read=False).count()
 
     def __str__(self): return f"{ self.sender.first_name } { self.sender.last_name } -> { self.receiver.first_name } { self.receiver.last_name }"
-    
     
 
 # Messages

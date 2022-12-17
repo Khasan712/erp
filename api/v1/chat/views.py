@@ -118,3 +118,12 @@ def send_email_to_service_creator(email):
         to=[email],
     )
     email.send()
+
+
+def send_to_supplier_from_contract(email):
+    supplier = EmailMessage(
+        body="Contract created",
+        subject="Something about contract.",
+        to=[email],
+    )
+    supplier.send()

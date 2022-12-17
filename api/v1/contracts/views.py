@@ -214,7 +214,6 @@ class ContractListView(APIView):
             service_choice = data.get('serviceCommodityConsultant')
             items = data.get('items')
             with transaction.atomic():
-                print(self.validate_contract_structure(data))
                 if self.validate_contract_structure(data) is not True:
                     raise ValidationError(self.validate_contract_structure(data))
                 serializer = ContractSerializer(data=data)

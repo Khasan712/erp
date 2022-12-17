@@ -10,32 +10,61 @@ from .models import (
 import datetime
 from django.forms import model_to_dict
 from .history_contract_models import HistoryContract
+from ..chat.notification_models.notifications import ContractNotification
+from ..chat.views import send_to_supplier_from_contract
+
+
+def create_notify_days(instance):
+    if instance.contract_notice and instance.notification:
+        instance.duration = instance.expiration_date - instance.effective_date
+        send_email_day = instance.expiration_date - datetime.timedelta(days=instance.contract_notice)
+        with transaction.atomic():
+            ContractNotificationDay.objects.create(
+                contract_id=instance.id, send_email_day=send_email_day
+            )
+            if instance.notification:
+                last_n_day = ContractNotificationDay.objects.filter(contract_id=instance.id).last()
+                enterval_days = instance.expiration_date - last_n_day.send_email_day
+                for d in range(1, int(enterval_days.days) + 1):
+                    if d % instance.notification == 0:
+                        if last_n_day.send_email_day + datetime.timedelta(
+                                days=instance.notification) <= instance.expiration_date:
+                            last_n_day = ContractNotificationDay.objects.filter(contract_id=instance.id).last()
+                            new = ContractNotificationDay(
+                                contract_id=instance.id,
+                                send_email_day=last_n_day.send_email_day + datetime.timedelta(
+                                    days=instance.notification)
+                            )
+                            new.save()
+
+
+def create_task_for_contract(instance):
+    tasks = ContractTask.objects.select_related('organization')
+    if tasks:
+        with transaction.atomic():
+            for task in tasks:
+                connecting_with_task = ConnectContractWithTask(
+                    contract_id=instance.id,
+                    task_id=task.id
+                )
+                connecting_with_task.save()
+
+
+def notify_supplier(contract, supplier):
+    notify = ContractNotification(
+        contract_id=contract,
+        receiver_id=supplier.supplier.id
+    )
+    notify.save()
+    send_to_supplier_from_contract(supplier.supplier.email)
 
 
 @receiver(post_save, sender=Contract)
-def create_notification(sender, instance, created, **kwargs):
+def contract_signals(sender, instance, created, **kwargs):
     if created:
-        if instance.contract_notice and instance.notification:
-            # instance.duration =
-
-            send_email_day = instance.expiration_date - datetime.timedelta(days=instance.contract_notice)
-            with transaction.atomic():
-                ContractNotificationDay.objects.create(
-                    contract_id=instance.id, send_email_day=send_email_day
-                )
-                if instance.notification:
-                    last_n_day = ContractNotificationDay.objects.filter(contract_id=instance.id).last()
-                    enterval_days = instance.expiration_date - last_n_day.send_email_day
-                    for d in range(1, int(enterval_days.days)+1):
-                        if d % instance.notification == 0:
-                            if last_n_day.send_email_day + datetime.timedelta(days=instance.notification) <= instance.expiration_date:
-                                last_n_day = ContractNotificationDay.objects.filter(contract_id=instance.id).last()
-                                new = ContractNotificationDay(
-                                    contract_id=instance.id,
-                                    send_email_day=last_n_day.send_email_day + datetime.timedelta(days=instance.notification)
-                                )
-                                new.save()
-
+        create_notify_days(instance)
+        create_task_for_contract(instance)
+        notify_supplier(instance.supplier, instance.id)
     # if not created:
     #     history = ContractHistory(
     #         contract=instance.id,
@@ -59,17 +88,7 @@ def create_notification(sender, instance, created, **kwargs):
     #     history.save()
 
 
-@receiver(post_save, sender=Contract)
-def create_task_for_contract(sender, instance, created, **kwargs):
-    tasks = ContractTask.objects.select_related('organization')
-    if tasks and created:
-        with transaction.atomic():
-            for task in tasks:
-                connecting_with_task = ConnectContractWithTask(
-                    contract_id=instance.id,
-                    task_id=task.id
-                )
-                connecting_with_task.save()
+
 
 
 # @receiver(post_save, sender=Contract)
