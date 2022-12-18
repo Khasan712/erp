@@ -23,7 +23,8 @@ services:
     container_name: nginx
     restart: always
     volumes:
-      - ./nginx/conf/:/etc/nginx/conf.d/
+      - ./nginx/conf/:/etc/nginx/conf.d/:ro
+      # - ./certbot/www:/var/www/certbot/:ro
       - static_files:/home/app/staticfiles/
       - static:/home/app/static/
       - media:/home/app/media/
@@ -31,9 +32,16 @@ services:
       - web
     ports:
       - 1080:80
-      - 10443:443
+      - 1443:443
     env_file:
       - .env
+
+
+  # certbot:
+  #   image: certbot/certbot:latest
+  #   container_name: certbot
+  #   volumes:
+  #     - ./certbot/www/:/var/www/certbot/:rw
 
 
   mysql:
