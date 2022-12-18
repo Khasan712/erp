@@ -8,6 +8,6 @@ RUN pip install --upgrade pip && \
     pip install -r requirements.txt \
 
 
-EXPOSE 8001
+#EXPOSE 8001
 
 CMD ["gunicorn", "--bind", ":8001", "--workers", "3", "config.wsgi"]
