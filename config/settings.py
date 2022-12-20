@@ -228,7 +228,7 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
 
-
+CORS_ORIGIN_ALLOW_ALL = True
 CORS_URLS_REGEX = r'^/api/v1/.*$'
 
 CORS_ALLOW_METHODS = [
@@ -252,8 +252,8 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
-CORS_ALLOWED_ORIGINS = os.environ['CORS_ALLOWED_ORIGINS'].split(' ')
-CSRF_TRUSTED_ORIGINS = os.environ['CORS_ALLOWED_ORIGINS'].split(' ')
+#CORS_ALLOWED_ORIGINS = os.environ['CORS_ALLOWED_ORIGINS'].split(' ')
+#CSRF_TRUSTED_ORIGINS = os.environ['CORS_ALLOWED_ORIGINS'].split(' ')
 
 
 # SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
