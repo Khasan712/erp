@@ -52,13 +52,12 @@ def create_task_for_contract(instance):
 
 
 def notify_supplier(contract, supplier):
-    supplier_user = User.objects.get(id=supplier, role='supplier')
     notify = ContractNotification(
         contract_id=contract,
-        receiver_id=supplier_user.id
+        receiver_id=supplier.supplier.id
     )
     notify.save()
-    send_to_supplier_from_contract(supplier_user.email)
+    send_to_supplier_from_contract(supplier.supplier.email)
 
 
 @receiver(post_save, sender=Contract)
@@ -66,7 +65,7 @@ def contract_signals(sender, instance, created, **kwargs):
     if created:
         create_notify_days(instance)
         create_task_for_contract(instance)
-        notify_supplier(instance.supplier, instance.id)
+        notify_supplier(instance.id, instance.supplier)
     # if not created:
     #     history = ContractHistory(
     #         contract=instance.id,
