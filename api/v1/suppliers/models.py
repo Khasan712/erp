@@ -6,9 +6,9 @@ from api.v1.sourcing.enums import (
     QuestionaryStatus
 )
 import datetime
-# from django.core.exceptions import ValidationError
 from .enums import SupplierStatusChoice
 from django.core.exceptions import ValidationError
+
 
 class Supplier(models.Model):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)

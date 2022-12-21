@@ -12,6 +12,7 @@ from django.forms import model_to_dict
 from .history_contract_models import HistoryContract
 from ..chat.notification_models.notifications import ContractNotification
 from ..chat.views import send_to_supplier_from_contract
+from ..users.models import User
 
 
 def create_notify_days(instance):
@@ -51,12 +52,13 @@ def create_task_for_contract(instance):
 
 
 def notify_supplier(contract, supplier):
+    supplier_user = User.objects.get(id=supplier, role='supplier')
     notify = ContractNotification(
         contract_id=contract,
-        receiver_id=supplier.supplier.id
+        receiver_id=supplier_user.id
     )
     notify.save()
-    send_to_supplier_from_contract(supplier.supplier.email)
+    send_to_supplier_from_contract(supplier_user.email)
 
 
 @receiver(post_save, sender=Contract)
