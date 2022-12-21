@@ -316,3 +316,12 @@ class GetSupplierSourcingEvents(serializers.ModelSerializer):
         model = SourcingRequestEvent
         fields = ('id', 'creator', 'title', 'text',)
 
+    def to_representation(self, instance):
+        response = super(GetSupplierSourcingEvents, self).to_representation(instance)
+        response['creator'] = {
+            'id': instance.creator.id,
+            'first_name': instance.creator.first_name,
+            'last_name': instance.creator.last_name,
+        }
+        return response
+

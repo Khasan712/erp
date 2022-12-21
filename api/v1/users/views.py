@@ -184,7 +184,7 @@ class LogoutAPIView(generics.GenericAPIView):
 
 
 class DetailUserViews(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector)
     queryset = User.objects.all()
     serializer_class = UserUpdateSerializer
 
