@@ -283,6 +283,7 @@ class UserListView(APIView):
         params = self.request.query_params
         q = params.get('q')
         role = params.get('role')
+        create_supplier = params.get('create_supplier')
         users = User.objects.select_related('organization',).filter(organization_id=self.request.user.organization.id)\
             .order_by('-id')
         if q:
@@ -291,10 +292,9 @@ class UserListView(APIView):
                 Q(street__icontains=q) | Q(city__icontains=q) | Q(country__icontains=q) | Q(role__icontains=q)
             )
         if role:
-            if role == 'supplier':
-                users = users.filter(supplier_user=None)
-            else:
-                users = users.filter(role__in=role.split(','))
+            users = users.filter(role__in=role.split(','))
+        if create_supplier == 'supplier':
+            users = users.filter(role='supplier', supplier_user=None)
         return users
 
     def get(self, request):

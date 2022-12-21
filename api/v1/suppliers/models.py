@@ -8,7 +8,7 @@ from api.v1.sourcing.enums import (
 import datetime
 # from django.core.exceptions import ValidationError
 from .enums import SupplierStatusChoice
-
+from django.core.exceptions import ValidationError
 
 class Supplier(models.Model):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
@@ -37,6 +37,8 @@ class Supplier(models.Model):
             self.account = suppliers_qty + 1
         if self.parent is not None and self.same_billing_address:
             self.billing_address = self.parent.billing_address
+        if self.supplier.role != 'supplier':
+            raise ValidationError('Only suppliers can assign.')
         super().save(*args, **kwargs)
 
     def __str__(self) -> str:
