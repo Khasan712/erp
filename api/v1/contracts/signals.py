@@ -17,7 +17,7 @@ from ..users.models import User
 
 def create_notify_days(instance):
     if instance.contract_notice and instance.notification:
-        instance.duration = instance.expiration_date - instance.effective_date
+        # instance.duration = instance.expiration_date - instance.effective_date
         send_email_day = instance.expiration_date - datetime.timedelta(days=instance.contract_notice)
         with transaction.atomic():
             ContractNotificationDay.objects.create(
