@@ -23,7 +23,7 @@ services:
     container_name: nginx
     restart: always
     volumes:
-      - ./nginx/conf/:/etc/nginx/conf.d/:ro
+      - ./nginx/conf/:/etc/nginx/conf.d/:rw
       # - ./certbot/www:/var/www/certbot/:ro
       - static_files:/home/app/staticfiles/
       - static:/home/app/static/
