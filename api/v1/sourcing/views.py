@@ -642,7 +642,6 @@ class SourcingRequestEventDetailView(APIView):
             event_questionnaire['categories'] = questionnaire_categories
         return event_questionnaire
 
-
     def get(self, request, id):
         try:
             token = request.GET.get('token')

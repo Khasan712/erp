@@ -166,8 +166,8 @@ class SourcingRequestEvent(models.Model):
 
 
 class SourcingRequestEventSuppliers(models.Model):
-    supplier = models.ForeignKey(Supplier, on_delete=models.SET_NULL, null=True)
-    sourcingRequestEvent = models.ForeignKey(SourcingRequestEvent, on_delete=models.SET_NULL, null=True, related_name='sourcing_request_event')
+    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, null=True)
+    sourcingRequestEvent = models.ForeignKey(SourcingRequestEvent, on_delete=models.CASCADE, null=True, related_name='sourcing_request_event')
     created_at = models.DateTimeField(auto_now_add=True)
     supplier_timeline = models.CharField(max_length=11, choices=SourcingEventSupplierTimeLine.choices(), default='not_viewed')
 
