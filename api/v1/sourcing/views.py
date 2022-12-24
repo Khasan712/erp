@@ -818,22 +818,16 @@ class SupplierAnswerView(APIView):
                     if not serializer.is_valid():
                         raise ValidationError(message=f"{make_errors(serializer.errors)}")
                     serializer.save()
+        except Exception as e:
+            return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
+        else:
             return Response(
                 {
                     "success": True,
                     "message": 'Successfully created answers.',
                     "error": [],
-                    "data": [],
+                    "data": serializer.data,
                 }, status=status.HTTP_201_CREATED
-            )
-        except Exception as e:
-            return Response(
-                {
-                    "success": False,
-                    "message": 'Error occurred.',
-                    "error": str(e),
-                    "data": [],
-                }, status=status.HTTP_400_BAD_REQUEST
             )
 
     def patch(self, request):
