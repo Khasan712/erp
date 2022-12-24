@@ -795,9 +795,14 @@ class SupplierAnswerView(APIView):
     def post(self, request):
         try:
             data = request.data
+            user = self.request.user
             with transaction.atomic():
-                for d in data.get("answers"):
-                    supplier = Supplier.objects.get(id=data.get("supplier"))
+                supplier = Supplier.objects.select_related('organization', 'create_by', 'supplier', 'ForeignKey')
+                if supplier.parent is not None:
+                    supplier = supplier.get(parent__supplier_id=user.id)
+                else:
+                    supplier = supplier.get(supplier_id=user.id)
+                for d in data:
                     d['supplier'] = supplier.id
                     serializer = SupplierAnswerSerializers(data=d)
                     if not serializer.is_valid():
