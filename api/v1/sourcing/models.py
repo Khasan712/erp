@@ -164,6 +164,9 @@ class SourcingRequestEvent(models.Model):
             categories.append(category_obj)
         return categories
 
+    def __str__(self):
+        return f'{self.general_status}'
+
 
 class SourcingRequestEventSuppliers(models.Model):
     supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, null=True)
@@ -177,6 +180,9 @@ class SourcingRequestEventSuppliers(models.Model):
             supplier_id=self.supplier.id, question__parent__parent__parent_id=self.sourcingRequestEvent.id
         ).aggregate(foo=Coalesce(Sum('weight'), 0.0))['foo']
         return total_weight
+
+    def __str__(self):
+        return f'{self.supplier.name} - {self.sourcingRequestEvent.title}'
 
 
 class DocumentSourcing(models.Model):
