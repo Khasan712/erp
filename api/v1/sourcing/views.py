@@ -504,8 +504,8 @@ class SourcingEventGetByParamsAPIView(APIView):
         match suppliers_infos_questionaries:
             case 'supplier':
                 return {
-                    'id': self.get_queryset().id,
-                    'name': self.get_queryset().name
+                    'id': self.get_queryset().supplier.id,
+                    'name': self.get_queryset().supplier.name
                 }
             case 'suppliers':
                 return SourcingEventSuppliersSerializer(queryset, many=True).data
