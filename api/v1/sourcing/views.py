@@ -458,6 +458,7 @@ class SourcingEventGetByParamsAPIView(APIView):
         sourcing_events = SourcingRequestEvent.objects.select_related('sourcing_request', 'creator', 'parent').filter(
             sourcing_request__organization_id=self.request.user.organization.id
         )
+        user = self.request.user
         params = self.request.query_params
         sourcing_request = params.get('sourcing-request')
         event_id = params.get('event')
@@ -466,6 +467,12 @@ class SourcingEventGetByParamsAPIView(APIView):
             sourcing_events = sourcing_events.filter(sourcing_request_id=sourcing_request, general_status='sourcing_event')
             return sourcing_events
         match suppliers_infos_questionaries:
+            case 'supplier':
+                suppliers = SourcingRequestEventSuppliers.objects.select_related(
+                    'supplier', 'sourcingRequestEvent'
+                ).filter(sourcingRequestEvent_id=event_id)
+                for s in suppliers:
+                    return s if s.filter(supplier_id=user.id) is not None else s.filter(parent__supplier_id=user.id)
             case 'suppliers':
                 suppliers = SourcingRequestEventSuppliers.objects.select_related(
                     'supplier', 'sourcingRequestEvent'
@@ -482,9 +489,6 @@ class SourcingEventGetByParamsAPIView(APIView):
                     sourcingEvent_id=event_id
                 )
                 return documents
-            # case 'event_id':
-            #     event = sourcing_events.filter(id=event_id, general_status='sourcing_event').first()
-            #     return event
 
     def get_serializer(self):
         queryset = self.get_queryset()
@@ -494,6 +498,11 @@ class SourcingEventGetByParamsAPIView(APIView):
         if sourcing_request:
             return SourcingEventBySourcingRequestIDSerializers(queryset, many=True).data
         match suppliers_infos_questionaries:
+            case 'supplier':
+                return {
+                    'id': self.get_queryset().id,
+                    'name': self.get_queryset().name
+                }
             case 'suppliers':
                 return SourcingEventSuppliersSerializer(queryset, many=True).data
             case 'infos':
@@ -797,12 +806,10 @@ class SupplierAnswerView(APIView):
             data = request.data
             user = self.request.user
             with transaction.atomic():
-                supplier = Supplier.objects.select_related('organization', 'create_by', 'supplier', 'ForeignKey')
-                if supplier.parent is not None:
-                    supplier = supplier.get(parent__supplier_id=user.id)
-                else:
-                    supplier = supplier.get(supplier_id=user.id)
-                for d in data:
+                supplier = Supplier.objects.select_related('organization', 'create_by', 'supplier', 'ForeignKey').filter(
+                    id=data['supplier']
+                )
+                for d in data['answers']:
                     d['supplier'] = supplier.id
                     serializer = SupplierAnswerSerializers(data=d)
                     if not serializer.is_valid():

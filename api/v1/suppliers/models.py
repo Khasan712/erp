@@ -29,7 +29,7 @@ class Supplier(models.Model):
     institution_number = models.CharField(max_length=10, blank=True, null=True)
     bank_account = models.CharField(max_length=30, blank=True, null=True)
     # Parent
-    parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='parents')
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='parents')
 
     def save(self, *args, **kwargs):
         if self.account == '':
