@@ -472,7 +472,12 @@ class SourcingEventGetByParamsAPIView(APIView):
                     'supplier', 'sourcingRequestEvent'
                 ).filter(sourcingRequestEvent_id=event_id)
                 for s in suppliers:
-                    return s if s.filter(supplier_id=user.id) is not None else s.filter(parent__supplier_id=user.id)
+                    if s.supplier.id == user.id:
+                        return s
+                    elif s.parent.supplier.id == user.id:
+                        return s
+                    else:
+                        return None
             case 'suppliers':
                 suppliers = SourcingRequestEventSuppliers.objects.select_related(
                     'supplier', 'sourcingRequestEvent'
