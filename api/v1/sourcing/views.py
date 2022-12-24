@@ -812,7 +812,7 @@ class SupplierAnswerView(APIView):
             with transaction.atomic():
                 supplier = Supplier.objects.select_related('organization', 'create_by', 'supplier', 'ForeignKey').filter(
                     id=data['supplier']
-                )
+                ).first()
                 for d in data['answers']:
                     d['supplier'] = supplier.id
                     serializer = SupplierAnswerSerializers(data=d)
