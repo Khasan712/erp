@@ -808,9 +808,8 @@ class SupplierAnswerView(APIView):
     def post(self, request):
         try:
             data = request.data
-            user = self.request.user
             with transaction.atomic():
-                supplier = Supplier.objects.select_related('organization', 'create_by', 'supplier', 'ForeignKey').filter(
+                supplier = Supplier.objects.select_related('organization', 'create_by', 'supplier', 'parent').filter(
                     id=data['supplier']
                 ).first()
                 for d in data['answers']:
