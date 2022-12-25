@@ -458,13 +458,18 @@ class SourcingEventGetByParamsAPIView(APIView):
         sourcing_events = SourcingRequestEvent.objects.select_related('sourcing_request', 'creator', 'parent').filter(
             sourcing_request__organization_id=self.request.user.organization.id
         )
+        return sourcing_events
+
+    def get_filter(self):
         user = self.request.user
+        queryset = self.get_queryset()
         params = self.request.query_params
         sourcing_request = params.get('sourcing-request')
         event_id = params.get('event')
         suppliers_infos_questionaries = params.get('get_data')
         if sourcing_request:
-            sourcing_events = sourcing_events.filter(sourcing_request_id=sourcing_request, general_status='sourcing_event')
+            sourcing_events = queryset.filter(sourcing_request_id=sourcing_request,
+                                                     general_status='sourcing_event')
             return sourcing_events
         match suppliers_infos_questionaries:
             case 'supplier':
@@ -483,17 +488,16 @@ class SourcingEventGetByParamsAPIView(APIView):
                 ).filter(sourcingRequestEvent_id=event_id)
                 return suppliers
             case 'infos':
-                infos = sourcing_events.filter(parent_id=event_id, general_status='info')
+                infos = queryset.filter(parent_id=event_id, general_status='info')
                 return infos
             case 'questionaries':
-                questionaries = sourcing_events.filter(parent_id=event_id, general_status='questionary').first()
+                questionaries = queryset.filter(parent_id=event_id, general_status='questionary').first()
                 return questionaries
             case 'documents':
                 documents = DocumentSourcing.objects.select_related("sourcingRequest", "sourcingEvent").filter(
                     sourcingEvent_id=event_id
                 )
                 return documents
-        return sourcing_events
 
     def get_supplier_answer_question(self, questionnaire: int, supplier: int) -> list:
         supplier_answeres = SupplierAnswer.objects.select_related('supplier', 'question').filter(supplier_id=supplier)
@@ -523,23 +527,23 @@ class SourcingEventGetByParamsAPIView(APIView):
 
     def get_serializer(self):
         user = self.request.user
-        queryset = self.get_queryset()
+        filtered_data = self.get_filter()
         params = self.request.query_params
         event_id = params.get('event')
         sourcing_request = params.get('sourcing-request')
         suppliers_info_questionnaires = params.get('get_data')
         if sourcing_request:
-            return SourcingEventBySourcingRequestIDSerializers(queryset, many=True).data
+            return SourcingEventBySourcingRequestIDSerializers(filtered_data, many=True).data
         match suppliers_info_questionnaires:
             case 'supplier':
                 return {
-                    'id': self.get_queryset().supplier.id,
-                    'name': self.get_queryset().supplier.name
+                    'id': filtered_data.supplier.id,
+                    'name': filtered_data.supplier.name
                 }
             case 'suppliers':
-                return SourcingEventSuppliersSerializer(queryset, many=True).data
+                return SourcingEventSuppliersSerializer(filtered_data, many=True).data
             case 'infos':
-                return SourcingEventInfosSerializer(queryset, many=True).data
+                return SourcingEventInfosSerializer(filtered_data, many=True).data
             case 'questionaries':
                 if user.role == 'supplier':
                     suppliers = SourcingRequestEventSuppliers.objects.select_related(
@@ -550,14 +554,14 @@ class SourcingEventGetByParamsAPIView(APIView):
                         supplier = suppliers.filter(supplier__supplier_id=user.id).first()
                     elif suppliers.filter(supplier__parent__supplier_id=user.id) is not None:
                         supplier = suppliers.filter(supplier__parent__supplier_id=user.id).first()
-                    supplier_answer_questions = self.get_supplier_answer_question(queryset.id, supplier.id)
-                    serializer = SourcingEventSupplierQuestionarySerializer(queryset).data
+                    supplier_answer_questions = self.get_supplier_answer_question(filtered_data.id, supplier.id)
+                    serializer = SourcingEventSupplierQuestionarySerializer(filtered_data).data
                     questionnaire = serializer.copy()
                     questionnaire['get_questionary_data'] = supplier_answer_questions
                     return questionnaire
-                return SourcingEventQuestionarySerializer(queryset).data
+                return SourcingEventQuestionarySerializer(filtered_data).data
             case 'documents':
-                return SourcingEventQuestionarySerializer(queryset).data
+                return SourcingEventQuestionarySerializer(filtered_data).data
 
     def get(self, request):
         try:
