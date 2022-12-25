@@ -134,7 +134,7 @@ class SourcingRequestEvent(models.Model):
     success_weight = models.FloatField(default=0)
     # Weight
     weight = models.FloatField(default=0)
-    question = models.TextField(blank=True, null=True)
+    # question = models.TextField(blank=True, null=True)
     answer = models.TextField(blank=True, null=True)
     yes_no = models.BooleanField(null=True)
     parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True)
@@ -152,6 +152,28 @@ class SourcingRequestEvent(models.Model):
                     'text': question.text,
                     'answer': question.answer,
                     'yes_no': question.yes_no,
+                    'weight': question.weight,
+                }
+                category_questions.append(question_obj)
+            category_obj = {
+                'id': category.id,
+                'title': category.title,
+                'weight': category.weight,
+                'questions': category_questions
+            }
+            categories.append(category_obj)
+        return categories
+
+    @property
+    def get_supplier_answer_question(self):
+        queryset = SourcingRequestEvent.objects.select_related('sourcing_request', 'creator', 'parent')
+        categories = []
+        for category in queryset.filter(parent_id=self.id, general_status='category'):
+            category_questions = []
+            for question in queryset.filter(parent_id=category.id, general_status='question'):
+                question_obj = {
+                    'id': question.id,
+                    'text': question.text,
                     'weight': question.weight,
                 }
                 category_questions.append(question_obj)

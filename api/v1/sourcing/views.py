@@ -52,7 +52,7 @@ from .serializers import (
     SourcingEventBySourcingRequestIDSerializers, SourcingEventSuppliersSerializer, SourcingEventInfosSerializer,
     SourcingEventQuestionarySerializer, SourcingRequestServiceSerializers, SourcingRequestCommoditySerializers,
     SourcingRequestConsultantSerializers, EventInfoUpdateSerializer, EventUpdateSerializer,
-    EventSupplierUpdateSerializer, SourcingRequestAssignedListSerializer
+    EventSupplierUpdateSerializer, SourcingRequestAssignedListSerializer, SourcingEventSupplierQuestionarySerializer
 )
 from api.v1.users.permissions import (
     IsSupplier,
@@ -494,14 +494,42 @@ class SourcingEventGetByParamsAPIView(APIView):
                 )
                 return documents
 
+    def get_supplier_answer_question(self, questionnaire: int, supplier: int) -> list:
+        supplier_answeres = SupplierAnswer.objects.select_related('supplier', 'question').filter(supplier_id=supplier)
+        categories = []
+        for category in  self.get_queryset().filter(parent_id=questionnaire, general_status='category'):
+            category_questions = []
+            for question in self.get_queryset().filter(parent_id=category.id, general_status='question'):
+                answered = None
+                answer = supplier_answeres.filter(question_id=question.id).first()
+                if answer is not None:
+                    answered = {'id': question.id, 'answer': answer.answer, 'yes_no': answer.yes_no}
+                question_obj = {
+                    'id': question.id,
+                    'text': question.text,
+                    'weight': question.weight,
+                    'answered': answered
+                }
+                category_questions.append(question_obj)
+            category_obj = {
+                'id': category.id,
+                'title': category.title,
+                'weight': category.weight,
+                'questions': category_questions
+            }
+            categories.append(category_obj)
+        return categories
+
     def get_serializer(self):
+        user = self.request.user
         queryset = self.get_queryset()
         params = self.request.query_params
+        event_id = params.get('event')
         sourcing_request = params.get('sourcing-request')
-        suppliers_infos_questionaries = params.get('get_data')
+        suppliers_info_questionnaires = params.get('get_data')
         if sourcing_request:
             return SourcingEventBySourcingRequestIDSerializers(queryset, many=True).data
-        match suppliers_infos_questionaries:
+        match suppliers_info_questionnaires:
             case 'supplier':
                 return {
                     'id': self.get_queryset().supplier.id,
@@ -512,11 +540,23 @@ class SourcingEventGetByParamsAPIView(APIView):
             case 'infos':
                 return SourcingEventInfosSerializer(queryset, many=True).data
             case 'questionaries':
+                if user.role == 'supplier':
+                    suppliers = SourcingRequestEventSuppliers.objects.select_related(
+                        'supplier', 'sourcingRequestEvent'
+                    ).filter(sourcingRequestEvent_id=event_id)
+                    supplier = None
+                    if suppliers.filter(supplier__supplier_id=user.id) is not None:
+                        supplier = suppliers.filter(supplier__supplier_id=user.id).first()
+                    elif suppliers.filter(supplier__parent__supplier_id=user.id) is not None:
+                        supplier = suppliers.filter(supplier__parent__supplier_id=user.id).first()
+                    supplier_answer_questions = self.get_supplier_answer_question(queryset.id, supplier)
+                    serializer = SourcingEventSupplierQuestionarySerializer(queryset).data
+                    questionnaire = serializer.copy()
+                    questionnaire['get_questionary_data'] = supplier_answer_questions
+                    return questionnaire
                 return SourcingEventQuestionarySerializer(queryset).data
             case 'documents':
                 return SourcingEventQuestionarySerializer(queryset).data
-            # case 'event_id':
-            #     return
 
     def get(self, request):
         try:
@@ -812,7 +852,13 @@ class SupplierAnswerView(APIView):
                 supplier = Supplier.objects.select_related('organization', 'create_by', 'supplier', 'parent').filter(
                     id=data['supplier']
                 ).first()
+                supplier_answers = SupplierAnswer.objects.select_related('supplier', 'question').filter(
+                    supplier_id=data['supplier']
+                )
                 for d in data['answers']:
+                    supplier_answers = supplier_answers.filter(question_id=data['question']).first()
+                    if supplier_answers is not None:
+                        raise ValidationError(message=f'You have already answered for this question ID {data["question"]}')
                     d['supplier'] = supplier.id
                     serializer = SupplierAnswerSerializers(data=d)
                     if not serializer.is_valid():

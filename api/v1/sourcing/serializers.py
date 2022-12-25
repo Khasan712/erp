@@ -287,6 +287,12 @@ class SourcingEventQuestionarySerializer(serializers.ModelSerializer):
         fields = ('id', 'title', 'success_weight', 'get_questionary_data')
 
 
+class SourcingEventSupplierQuestionarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SourcingRequestEvent
+        fields = ('id', 'title', 'success_weight')
+
+
 class SourcingRequestServiceSerializers(serializers.ModelSerializer):
     class Meta:
         model = SourcingRequestService
