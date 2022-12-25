@@ -514,14 +514,14 @@ class SourcingEventGetByParamsAPIView(APIView):
                         'weight': question.weight,
                         'answered': answered
                     }
-                else:
-                    question_obj = {
-                        'id': question.id,
-                        'text': question.text,
-                        'weight': question.weight,
-                        'answered': None
-                    }
-                category_questions.append(question_obj)
+                # else:
+                #     question_obj = {
+                #         'id': question.id,
+                #         'text': question.text,
+                #         'weight': question.weight,
+                #         'answered': None
+                #     }
+                    category_questions.append(question_obj)
             category_obj = {
                 'id': category.id,
                 'title': category.title,
