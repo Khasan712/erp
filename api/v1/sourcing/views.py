@@ -466,12 +466,12 @@ class SourcingEventGetByParamsAPIView(APIView):
         params = self.request.query_params
         sourcing_request = params.get('sourcing-request')
         event_id = params.get('event')
-        suppliers_infos_questionaries = params.get('get_data')
+        suppliers_info_questionnaries = params.get('get_data')
         if sourcing_request:
             sourcing_events = queryset.filter(sourcing_request_id=sourcing_request,
                                                      general_status='sourcing_event')
             return sourcing_events
-        match suppliers_infos_questionaries:
+        match suppliers_info_questionnaries:
             case 'supplier':
                 suppliers = SourcingRequestEventSuppliers.objects.select_related(
                     'supplier', 'sourcingRequestEvent'
@@ -872,9 +872,9 @@ class SupplierAnswerView(APIView):
                     supplier_id=data['supplier']
                 )
                 for d in data['answers']:
-                    supplier_answers = supplier_answers.filter(question_id=data['question']).first()
+                    supplier_answers = supplier_answers.filter(question_id=d['question']).first()
                     if supplier_answers is not None:
-                        raise ValidationError(message=f'You have already answered for this question ID {data["question"]}')
+                        raise ValidationError(message=f'You have already answered for this question ID {d["question"]}')
                     d['supplier'] = supplier.id
                     serializer = SupplierAnswerSerializers(data=d)
                     if not serializer.is_valid():
