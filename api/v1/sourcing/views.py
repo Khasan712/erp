@@ -493,11 +493,12 @@ class SourcingEventGetByParamsAPIView(APIView):
                     sourcingEvent_id=event_id
                 )
                 return documents
+        return sourcing_events
 
     def get_supplier_answer_question(self, questionnaire: int, supplier: int) -> list:
         supplier_answeres = SupplierAnswer.objects.select_related('supplier', 'question').filter(supplier_id=supplier)
         categories = []
-        for category in  self.get_queryset().filter(parent_id=questionnaire, general_status='category'):
+        for category in self.get_queryset().filter(parent_id=questionnaire, general_status='category'):
             category_questions = []
             for question in self.get_queryset().filter(parent_id=category.id, general_status='question'):
                 answered = None
