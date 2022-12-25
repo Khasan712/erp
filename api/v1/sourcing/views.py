@@ -500,21 +500,27 @@ class SourcingEventGetByParamsAPIView(APIView):
                 return documents
 
     def get_supplier_answer_question(self, questionnaire: int, supplier: int) -> list:
-        supplier_answeres = SupplierAnswer.objects.select_related('supplier', 'question').filter(supplier_id=supplier)
+        supplier_answers = SupplierAnswer.objects.select_related('supplier', 'question').filter(supplier_id=supplier)
         categories = []
         for category in self.get_queryset().filter(parent_id=questionnaire, general_status='category'):
             category_questions = []
             for question in self.get_queryset().filter(parent_id=category.id, general_status='question'):
-                answered = None
-                answer = supplier_answeres.filter(question_id=question.id).first()
-                if answer is not None:
+                answer = supplier_answers.filter(question_id=question.id).last()
+                if answer:
                     answered = {'id': question.id, 'answer': answer.answer, 'yes_no': answer.yes_no}
-                question_obj = {
-                    'id': question.id,
-                    'text': question.text,
-                    'weight': question.weight,
-                    'answered': answered
-                }
+                    question_obj = {
+                        'id': question.id,
+                        'text': question.text,
+                        'weight': question.weight,
+                        'answered': answered
+                    }
+                else:
+                    question_obj = {
+                        'id': question.id,
+                        'text': question.text,
+                        'weight': question.weight,
+                        'answered': None
+                    }
                 category_questions.append(question_obj)
             category_obj = {
                 'id': category.id,
