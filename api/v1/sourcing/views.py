@@ -507,25 +507,25 @@ class SourcingEventGetByParamsAPIView(APIView):
         for category in self.get_queryset().filter(parent_id=questionnaire, general_status='category'):
             category_questions = []
             for question in self.get_queryset().filter(parent_id=category.id, general_status='question'):
-                supplier_answer = supplier_answers.filter(question__general_status='question', question_id=question.id).first()
-                if supplier_answer:
-                    answered = {
-                        'id': supplier_answer.question.id, 'answer': supplier_answer.answer,
-                        'yes_no': supplier_answer.yes_no
-                    }
-                    question_obj = {
-                        'id': question.id,
-                        'text': question.text,
-                        'weight': question.weight,
-                        'answered': answered
-                    }
-                else:
-                    question_obj = {
-                        'id': question.id,
-                        'text': question.text,
-                        'weight': question.weight,
-                        'answered': None
-                    }
+                supplier_answer = supplier_answers.get(question__general_status='question', question_id=question.id)
+                # if supplier_answer:
+                answered = {
+                    'id': supplier_answer.question.id, 'answer': supplier_answer.answer,
+                    'yes_no': supplier_answer.yes_no
+                }
+                question_obj = {
+                    'id': question.id,
+                    'text': question.text,
+                    'weight': question.weight,
+                    'answered': answered
+                }
+                # else:
+                #     question_obj = {
+                #         'id': question.id,
+                #         'text': question.text,
+                #         'weight': question.weight,
+                #         'answered': None
+                #     }
                 category_questions.append(question_obj)
             category_obj = {
                 'id': category.id,
