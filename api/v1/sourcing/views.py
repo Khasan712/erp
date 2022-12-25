@@ -549,7 +549,7 @@ class SourcingEventGetByParamsAPIView(APIView):
                         supplier = suppliers.filter(supplier__supplier_id=user.id).first()
                     elif suppliers.filter(supplier__parent__supplier_id=user.id) is not None:
                         supplier = suppliers.filter(supplier__parent__supplier_id=user.id).first()
-                    supplier_answer_questions = self.get_supplier_answer_question(queryset.id, supplier)
+                    supplier_answer_questions = self.get_supplier_answer_question(queryset.id, supplier.id)
                     serializer = SourcingEventSupplierQuestionarySerializer(queryset).data
                     questionnaire = serializer.copy()
                     questionnaire['get_questionary_data'] = supplier_answer_questions
