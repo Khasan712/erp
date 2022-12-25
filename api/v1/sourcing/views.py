@@ -501,31 +501,31 @@ class SourcingEventGetByParamsAPIView(APIView):
 
     def get_supplier_answer_question(self, questionnaire: int, supplier: int):
         supplier_answers = SupplierAnswer.objects.select_related('supplier', 'question', 'checker').filter(
-            supplier_id=5
+            supplier_id=supplier
         )
         categories = []
         for category in self.get_queryset().filter(parent_id=questionnaire, general_status='category'):
             category_questions = []
             for question in self.get_queryset().filter(parent_id=category.id, general_status='question'):
-                supplier_answer = supplier_answers.get(question__general_status='question', question_id=question.id)
-                # if supplier_answer:
-                answered = {
-                    'id': supplier_answer.question.id, 'answer': supplier_answer.answer,
-                    'yes_no': supplier_answer.yes_no
-                }
-                question_obj = {
-                    'id': question.id,
-                    'text': question.text,
-                    'weight': question.weight,
-                    'answered': answered
-                }
-                # else:
-                #     question_obj = {
-                #         'id': question.id,
-                #         'text': question.text,
-                #         'weight': question.weight,
-                #         'answered': None
-                #     }
+                supplier_answer = supplier_answers.filter(question__general_status='question', question_id=question.id).first()
+                if supplier_answer:
+                    answered = {
+                        'id': supplier_answer.question.id, 'answer': supplier_answer.answer,
+                        'yes_no': supplier_answer.yes_no
+                    }
+                    question_obj = {
+                        'id': question.id,
+                        'text': question.text,
+                        'weight': question.weight,
+                        'answered': answered
+                    }
+                else:
+                    question_obj = {
+                        'id': question.id,
+                        'text': question.text,
+                        'weight': question.weight,
+                        'answered': None
+                    }
                 category_questions.append(question_obj)
             category_obj = {
                 'id': category.id,
@@ -565,7 +565,7 @@ class SourcingEventGetByParamsAPIView(APIView):
                         supplier = suppliers.filter(supplier__supplier_id=user.id).first()
                     elif suppliers.filter(supplier__parent__supplier_id=user.id) is not None:
                         supplier = suppliers.filter(supplier__parent__supplier_id=user.id).first()
-                    supplier_answer_questions = self.get_supplier_answer_question(filtered_data.id, supplier.id)
+                    supplier_answer_questions = self.get_supplier_answer_question(filtered_data.id, supplier.supplier.id)
                     serializer = SourcingEventSupplierQuestionarySerializer(filtered_data).data
                     questionnaire = serializer.copy()
                     questionnaire['get_questionary_data'] = supplier_answer_questions
