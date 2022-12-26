@@ -574,7 +574,7 @@ class SourcingEventGetByParamsAPIView(APIView):
                     serializer = SourcingEventSupplierQuestionarySerializer(filtered_data).data
                     questionnaire = serializer.copy()
                     questionnaire['get_questionary_data'] = {
-                        'question_answer': supplier_answer_questions,
+                        'answers_of_question': supplier_answer_questions,
                         'timeline': supplier.supplier_timeline,
                         'is_submitted': True if supplier.supplier_timeline in ['done', 'passed', 'rejected'] else False
                     }
