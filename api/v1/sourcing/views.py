@@ -510,13 +510,15 @@ class SourcingEventGetByParamsAPIView(APIView):
                 supplier_answer = supplier_answers.filter(question__general_status='question', question_id=question.id).first()
                 if supplier_answer:
                     answered = {
-                        'id': supplier_answer.question.id, 'answer': supplier_answer.answer,
-                        'yes_no': supplier_answer.yes_no
+                        'id': supplier_answer.question.id,
+                        'answer_type': 'yes_no' if supplier_answer.yes_no is not None else 'input',
+                        'answer': supplier_answer.yes_no if supplier_answer.yes_no is not None else supplier_answer.answer,
                     }
                     question_obj = {
                         'id': question.id,
                         'text': question.text,
                         'weight': question.weight,
+                        'answer_type': 'yes_no' if question.yes_no is not None else 'input',
                         'answered': answered
                     }
                 else:
@@ -565,10 +567,17 @@ class SourcingEventGetByParamsAPIView(APIView):
                         supplier = suppliers.filter(supplier__supplier_id=user.id).first()
                     elif suppliers.filter(supplier__parent__supplier_id=user.id) is not None:
                         supplier = suppliers.filter(supplier__parent__supplier_id=user.id).first()
+                    if supplier is not None and supplier.supplier_timeline == 'not_viewed':
+                        supplier.supplier_timeline = 'in_progress'
+                        supplier.save()
                     supplier_answer_questions = self.get_supplier_answer_question(filtered_data.id, supplier.supplier.id)
                     serializer = SourcingEventSupplierQuestionarySerializer(filtered_data).data
                     questionnaire = serializer.copy()
-                    questionnaire['get_questionary_data'] = supplier_answer_questions
+                    questionnaire['get_questionary_data'] = {
+                        'question_answer': supplier_answer_questions,
+                        'timeline': supplier.supplier_timeline,
+                        'is_submitted': True if supplier.supplier_timeline in ['done', 'passed', 'rejected'] else False
+                    }
                     return questionnaire
                 return SourcingEventQuestionarySerializer(filtered_data).data
             case 'documents':

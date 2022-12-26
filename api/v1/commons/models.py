@@ -14,4 +14,4 @@ class AbstractTimeBase(models.Model):
         super().save(*args, **kwargs)
     
     class Meta:
-        abstract = True    
+        abstract = True
