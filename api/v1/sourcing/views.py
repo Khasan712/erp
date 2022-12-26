@@ -905,7 +905,7 @@ class SupplierAnswerView(APIView):
                     "success": True,
                     "message": 'Successfully created answers.',
                     "error": [],
-                    "data": serializer.data,
+                    "data": [],
                 }, status=status.HTTP_201_CREATED
             )
 
