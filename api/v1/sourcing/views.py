@@ -880,7 +880,7 @@ class SupplierAnswerView(APIView):
                 supplier_in_event = SourcingRequestEventSuppliers.objects.select_related(
                     'supplier', 'sourcingRequestEvent'
                 ).get(supplier_id=supplier.id)
-                if supplier_in_event.supplier_timeline in ('done', 'passed', 'rejected'):
+                if supplier_in_event.supplier_timeline in ['done', 'passed', 'rejected']:
                     raise ValidationError(message='You have already submitted.')
                 supplier_answers = SupplierAnswer.objects.select_related('supplier', 'question').filter(
                     supplier_id=data['supplier']
