@@ -889,8 +889,9 @@ class SupplierAnswerView(APIView):
                     supplier_answer = supplier_answers.filter(question_id=d['question']).first()
                     if supplier_answer is not None:
                         supplier_answer_serializer = SupplierAnswerSerializers(supplier_answer, data=d, partial=True)
-                        if supplier_answer_serializer.is_valid():
+                        if not supplier_answer_serializer.is_valid():
                             raise ValidationError(message=f'{make_errors(supplier_answer_serializer.errors)}')
+                        supplier_answer_serializer.save()
                     else:
                         d['supplier'] = supplier.id
                         serializer = SupplierAnswerSerializers(data=d)
