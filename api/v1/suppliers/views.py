@@ -1,4 +1,5 @@
 from django.db.models import Q
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.views import APIView
 from api.v1.users.models import User
 from api.v1.commons.pagination import make_pagination
@@ -386,13 +387,71 @@ class GetContractsBySupplierID(APIView):
 class SourcingEventBySupplierID(APIView):
     permission_classes = (permissions.IsAuthenticated, IsSupplier)
 
+    def get_queryset(self):
+        queryset = SourcingRequestEvent.objects.select_related(
+            'sourcing_request', 'creator', 'parent'
+        ).filter(sourcing_request_event__supplier__supplier_id=self.request.user.id)
+        return queryset
+
+    def get_filter(self):
+        queryset = self.get_queryset()
+        params = self.request.query_params
+        timeline = params.get('timeline')
+        event_status = params.get('event_status')
+        from_deadline = params.get('from_deadline')
+        to_deadline = params.get('to_deadline')
+
+        if timeline:
+            queryset = queryset.filter(sourcing_request_event__supplier_timeline__in=timeline.split(','))
+        if event_status:
+            queryset = queryset.filter(sourcing_event__in=event_status.split(','))
+        if from_deadline and not to_deadline:
+            queryset = queryset.filter(sourcing_request__deadline_at__gte=from_deadline)
+        if from_deadline and to_deadline:
+            queryset = queryset.filter(
+                sourcing_request__deadline_at__gte=from_deadline,
+                sourcing_request__deadline_at__lte=to_deadline
+            )
+        filtered_events = []
+        if queryset is not None:
+            supplier_timelines = SourcingRequestEventSuppliers.objects.select_related(
+                'supplier', 'sourcingRequestEvent'
+            ).filter(supplier__supplier_id=self.request.user.id)
+            for event in queryset:
+                supplier_current_event_timeline = supplier_timelines.filter(sourcingRequestEvent_id=event.id).first()
+                supplier_event = {
+                    'id': event.id,
+                    'creator': {
+                        'id': event.creator.id,
+                        'first_name': event.creator.first_name,
+                        'last_name': event.creator.last_name,
+                    },
+                    'title': event.title,
+                    'text': event.text,
+                    'event_status': event.sourcing_event,
+                    'deadline_at': event.get_deadline_at,
+                    'supplier_timeline': supplier_current_event_timeline.supplier_timeline
+                }
+                filtered_events.append(supplier_event)
+        return filtered_events
+
     def get(self, request):
         try:
-            user = self.request.user
-            events = SourcingRequestEvent.objects.select_related(
-                'sourcing_request', 'creator', 'parent'
-            ).filter(sourcing_request_event__supplier__supplier_id=user.id)
+            data = self.get_filter()
+            paginator = LimitOffsetPagination()
+            result_page = paginator.paginate_queryset(data, request)
+            paginator_response = paginator.get_paginated_response(result_page).data
         except Exception as e:
             return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response(make_pagination(self.request, GetSupplierSourcingEvents, events), status=status.HTTP_200_OK)
+            return Response(
+                {
+                    "success": True,
+                    "message": "Successfully got list",
+                    "error": [],
+                    "count": paginator_response["count"],
+                    "next": paginator_response["next"],
+                    "previous": paginator_response["previous"],
+                    "data": result_page,
+                },
+            )

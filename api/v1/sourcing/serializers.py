@@ -320,7 +320,7 @@ class SourcingRequestAssignedListSerializer(serializers.ModelSerializer):
 class GetSupplierSourcingEvents(serializers.ModelSerializer):
     class Meta:
         model = SourcingRequestEvent
-        fields = ('id', 'creator', 'title', 'text', 'get_deadline_at')
+        fields = ('id', 'creator', 'title', 'text', 'sourcing_event', 'get_deadline_at')
 
     def to_representation(self, instance):
         response = super(GetSupplierSourcingEvents, self).to_representation(instance)
