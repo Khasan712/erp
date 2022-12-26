@@ -877,6 +877,11 @@ class SupplierAnswerView(APIView):
                 supplier = Supplier.objects.select_related('organization', 'create_by', 'supplier', 'parent').filter(
                     id=data['supplier']
                 ).first()
+                supplier_in_event = SourcingRequestEventSuppliers.objects.select_related(
+                    'supplier', 'sourcingRequestEvent'
+                ).get(supplier_id=supplier.id)
+                if supplier_in_event.supplier_timeline in ('done', 'passed', 'rejected'):
+                    raise ValidationError(message='You have already submitted.')
                 supplier_answers = SupplierAnswer.objects.select_related('supplier', 'question').filter(
                     supplier_id=data['supplier']
                 )
@@ -889,6 +894,9 @@ class SupplierAnswerView(APIView):
                     if not serializer.is_valid():
                         raise ValidationError(message=f"{make_errors(serializer.errors)}")
                     serializer.save()
+                if data['is_submitted']:
+                    supplier_in_event.supplier_timeline = 'done'
+                    supplier_in_event.save()
         except Exception as e:
             return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
         else:
