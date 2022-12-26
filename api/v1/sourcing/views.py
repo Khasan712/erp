@@ -886,14 +886,17 @@ class SupplierAnswerView(APIView):
                     supplier_id=data['supplier']
                 )
                 for d in data['answers']:
-                    supplier_answers = supplier_answers.filter(question_id=d['question']).first()
-                    if supplier_answers is not None:
-                        raise ValidationError(message=f'You have already answered for this question ID {d["question"]}')
-                    d['supplier'] = supplier.id
-                    serializer = SupplierAnswerSerializers(data=d)
-                    if not serializer.is_valid():
-                        raise ValidationError(message=f"{make_errors(serializer.errors)}")
-                    serializer.save()
+                    supplier_answer = supplier_answers.filter(question_id=d['question']).first()
+                    if supplier_answer is not None:
+                        supplier_answer_serializer = SupplierAnswerSerializers(supplier_answer, data=d, partial=True)
+                        if supplier_answer_serializer.is_valid():
+                            raise ValidationError(message=f'{make_errors(supplier_answer_serializer.errors)}')
+                    else:
+                        d['supplier'] = supplier.id
+                        serializer = SupplierAnswerSerializers(data=d)
+                        if not serializer.is_valid():
+                            raise ValidationError(message=f"{make_errors(serializer.errors)}")
+                        serializer.save()
                 if data['is_submitted']:
                     supplier_in_event.supplier_timeline = 'done'
                     supplier_in_event.save()

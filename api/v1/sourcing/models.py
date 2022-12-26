@@ -141,6 +141,10 @@ class SourcingRequestEvent(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     @property
+    def get_deadline_at(self):
+        return self.sourcing_request.deadline_at
+
+    @property
     def get_questionary_data(self):
         queryset = SourcingRequestEvent.objects.select_related('sourcing_request', 'creator', 'parent')
         categories = []
