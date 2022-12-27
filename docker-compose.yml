@@ -30,7 +30,7 @@ services:
       - media:/home/app/media/
 
       # - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
+#      - ./certbot/www:/var/www/certbot
     depends_on:
       - web
     ports:
@@ -40,12 +40,12 @@ services:
       - .env
 
 
-  certbot:
-    image: certbot/certbot
-    container_name: certbot
-    volumes: 
+#  certbot:
+#    image: certbot/certbot
+#    container_name: certbot
+#    volumes:
       # - ./certbot/conf:/etc/letsencrypt:rw
-      - ./certbot/www:/var/www/certbot:rw
+#      - ./certbot/www:/var/www/certbot:rw
     # command: certonly --webroot -w /var/www/certbot --force-renewal --email info.kamalov@gmail.com -d backend.jmb-inventory-system.com --agree-tos
 
 
