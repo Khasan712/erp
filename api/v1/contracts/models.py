@@ -195,7 +195,7 @@ class ContractConsultant(models.Model):
 
 
 class ContractNotificationDay(models.Model):
-    contract = models.ForeignKey(Contract, on_delete=models.SET_NULL, null=True)
+    contract = models.ForeignKey(Contract, on_delete=models.CASCADE, null=True)
     send_email_day = models.DateField()
     is_send = models.BooleanField(default=False)
 

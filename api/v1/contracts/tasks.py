@@ -17,11 +17,13 @@ import datetime
 def send_beat_email():
     contracts = ContractNotificationDay.objects.select_related('contract').filter(
         send_email_day=datetime.datetime.today(), is_send=False)
-    with transaction.atomic():
-        for contract in contracts:
-            send_email_for_contract_notice(contract.contract.category_manager.email)
-            contract.is_send = True
-            contract.save()
+
+    if contracts:
+        with transaction.atomic():
+            for contract in contracts:
+                send_email_for_contract_notice(contract.contract.category_manager.email)
+                contract.is_send = True
+                contract.save()
 
 
 @app.task
