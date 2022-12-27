@@ -191,7 +191,7 @@ class SourcingRequestEvent(models.Model):
         return categories
 
     def __str__(self):
-        return f'{self.general_status}'
+        return f'{self.general_status} - {self.id}'
 
 
 class SourcingRequestEventSuppliers(models.Model):

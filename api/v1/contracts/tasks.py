@@ -43,7 +43,7 @@ def check_auto_renew_terms():
             'organization', 'create_by', 'supplier').filter(terms='Auto Renew', expiration_date=datetime.datetime.today())
     with transaction.atomic():
         for contract in auto_renews:
-            contract.expiration_date = contract.expiration_date + (contract.expiration_date - contract.effective_date)
+            contract.expiration_date += (contract.expiration_date - contract.effective_date)
             contract.save()
             send_email_auto_renew(contract.category_manager.email, contract.expiration_date, contract.pk)
 
