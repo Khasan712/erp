@@ -91,9 +91,9 @@ def send_email_fixed(user_email, pk):
     token = RefreshToken.for_user(user).access_token
     relative_link = reverse('contract-detail')
     if settings.DEBUG:
-        contract_path = f'{settings.CORS_ALLOWED_ORIGINS[0]}{relative_link}?contract={pk}&token={token}'
+        contract_path = f'http://localhost:8000/?contract={pk}&token={token}'
     else:
-        contract_path = f'{settings.CORS_ALLOWED_ORIGINS[-1]}{relative_link}?contract={pk}&token={token}'
+        contract_path = f'http://jmb-inventory-system.com/?contract={pk}&token={token}'
     email = EmailMessage(
         body=f"Your contract expired, Contract status EXPIRED. \n{contract_path}",
         subject="Your contract expired.",
@@ -107,9 +107,9 @@ def send_email_auto_renew(user_email, expiration_date, pk):
     token = RefreshToken.for_user(user).access_token
     relative_link = reverse('contract-detail')
     if settings.DEBUG:
-        contract_path = f'{settings.CORS_ALLOWED_ORIGINS[0]}{relative_link}?contract={pk}&token={token}'
+        contract_path = f'http:localhost:8000/?contract={pk}&token={token}'
     else:
-        contract_path = f'{settings.CORS_ALLOWED_ORIGINS[-1]}{relative_link}?contract={pk}&token={token}'
+        contract_path = f'http://jmb-inventory-system.com/?contract={pk}&token={token}'
     email = EmailMessage(
         body=f"Contract has successfully auto renewed. Next expiration date is {expiration_date}. \n{contract_path}",
         subject="Contract has successfully auto renewed.",
