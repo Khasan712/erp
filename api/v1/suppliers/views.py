@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from api.v1.users.models import User
 from api.v1.commons.pagination import make_pagination
 from api.v1.commons.views import exception_response, get_serializer_valid_response, not_serializer_is_valid, \
-    serializer_valid_response, object_deleted_response
+    serializer_valid_response, object_deleted_response, object_not_found_response
 from api.v1.users.services import make_errors
 from .serializers import (
     SupplierSerializer,
@@ -105,6 +105,8 @@ class SuppliersDetail(APIView):
     def get(self, request, pk):
         try:
             supplier = self.get_object(pk)
+            if supplier is None:
+                return Response(object_not_found_response(), status=status.HTTP_204_NO_CONTENT)
             supplier_serializer = SupplierDetailSerializers(supplier)
         except Exception as e:
             return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
