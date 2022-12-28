@@ -14,6 +14,16 @@ class SupplierSerializer(serializers.ModelSerializer):
                   'institution_number', 'transit_number', 'bank_account', 'supplier', 'parent',
                   "billing_address", "same_billing_address")
 
+    def create(self, validated_data):
+        print(validated_data)
+        obj = Supplier.objects.create(**validated_data)
+        if obj.supplier is not None:
+            obj.parent_supplier = validated_data.get('supplier')
+        if obj.parent is not None:
+            obj.parent_supplier = validated_data.get('parent').parent_supplier
+        obj.save()
+        return obj
+
 
 class SupplierGetSerializer(serializers.ModelSerializer):
     class Meta:

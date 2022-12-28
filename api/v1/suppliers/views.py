@@ -47,7 +47,7 @@ from ..sourcing.serializers import GetSupplierSourcingEvents
 
 
 class SupplierListView(APIView):
-    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator)
+    permission_classes = (permissions.IsAuthenticated, IsContractAdministrator)
 
     def get_queryset(self):
         queryset = Supplier.objects.select_related('organization', 'create_by', 'supplier', 'parent').filter(

@@ -40,10 +40,6 @@ class Supplier(models.Model):
             self.billing_address = self.parent.billing_address
         if self.supplier is not None and self.supplier.role != 'supplier':
             raise ValidationError('Only suppliers can assign.')
-        if self.supplier is not None:
-            self.parent_supplier = self.supplier
-        if self.parent is not None:
-            self.parent_supplier = self.parent.parent_supplier
         super().save(*args, **kwargs)
 
     def __str__(self) -> str:
