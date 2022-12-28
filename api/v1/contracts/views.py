@@ -245,10 +245,9 @@ class ContractMasterAgreementListView(APIView):
     permission_classes = (permissions.IsAuthenticated, IsContractAdministrator)
 
     def get_queryset(self):
-        queryset = Contract.objects.select_related('parent_agreement', 'departement', 'category', 'currency',
-            'organization', 'create_by', 'supplier').filter(organization_id=self.request.user.organization.id).filter(
-            contract_structure='Master Agreement'
-        )
+        queryset = Contract.objects.select_related(
+            'parent_agreement', 'departement', 'category', 'currency', 'organization', 'create_by', 'supplier'
+        ).filter(organization_id=self.request.user.organization.id, contract_structure='Master Agreement')
         return queryset
 
     def get(self, request):
