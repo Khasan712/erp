@@ -33,8 +33,8 @@ class SupplierGetSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         response = super(SupplierGetSerializer, self).to_representation(instance)
         response['supplier'] = {
-            'first_name': instance.supplier.first_name,
-            'last_name': instance.supplier.last_name,
+            'first_name': instance.parent_supplier.first_name,
+            'last_name': instance.parent_supplier.last_name,
         }
         return response
 
