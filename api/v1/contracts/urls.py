@@ -17,7 +17,8 @@ from .views import (
     ContractStatusStatisticsView,
     ContractCategoryStatisticsView,
     ProcessContractTaskView,
-    ContractDetailView
+    ContractDetailView,
+    ContractMasterAgreementListView
 )
 
 urlpatterns = [
