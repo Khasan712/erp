@@ -377,7 +377,7 @@ class GetContractsBySupplierID(APIView):
             user = self.request.user
             contracts = Contract.objects.select_related(
                 'parent_agreement', 'departement', 'category', 'currency', 'organization', 'create_by', 'supplier'
-            ).filter(supplier__supplier_id=user.id)
+            ).filter(supplier__parent_supplier_id=user.id)
         except Exception as e:
             return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
         else:
@@ -390,7 +390,7 @@ class SourcingEventBySupplierID(APIView):
     def get_queryset(self):
         queryset = SourcingRequestEvent.objects.select_related(
             'sourcing_request', 'creator', 'parent'
-        ).filter(sourcing_request_event__supplier__supplier_id=self.request.user.id)
+        ).filter(sourcing_request_event__supplier__parent_supplier_id=self.request.user.id)
         return queryset
 
     def get_filter(self):
@@ -416,7 +416,7 @@ class SourcingEventBySupplierID(APIView):
         if queryset is not None:
             supplier_timelines = SourcingRequestEventSuppliers.objects.select_related(
                 'supplier', 'sourcingRequestEvent'
-            ).filter(supplier__supplier_id=self.request.user.id)
+            ).filter(supplier__parent_supplier_id=self.request.user.id)
             for event in queryset:
                 supplier_current_event_timeline = supplier_timelines.filter(sourcingRequestEvent_id=event.id).first()
                 supplier_event = {

@@ -473,15 +473,10 @@ class SourcingEventGetByParamsAPIView(APIView):
             return sourcing_events
         match suppliers_info_questionnaries:
             case 'supplier':
-                suppliers = SourcingRequestEventSuppliers.objects.select_related(
+                supplier_event = SourcingRequestEventSuppliers.objects.select_related(
                     'supplier', 'sourcingRequestEvent'
-                ).filter(sourcingRequestEvent_id=event_id)
-                if suppliers.filter(supplier__supplier_id=user.id) is not None:
-                    return suppliers.filter(supplier__supplier_id=user.id).first()
-                elif suppliers.filter(supplier__parent__supplier_id=user.id) is not None:
-                    return suppliers.filter(supplier__parent__supplier_id=user.id).first()
-                else:
-                    return None
+                ).filter(sourcingRequestEvent_id=event_id, supplier__parent_supplier_id=user.id).first()
+                return supplier_event
             case 'suppliers':
                 suppliers = SourcingRequestEventSuppliers.objects.select_related(
                     'supplier', 'sourcingRequestEvent'
@@ -553,24 +548,19 @@ class SourcingEventGetByParamsAPIView(APIView):
                 return SourcingEventInfosSerializer(filtered_data, many=True).data
             case 'questionaries':
                 if user.role == 'supplier':
-                    suppliers = SourcingRequestEventSuppliers.objects.select_related(
+                    supplier_event = SourcingRequestEventSuppliers.objects.select_related(
                         'supplier', 'sourcingRequestEvent'
-                    ).filter(sourcingRequestEvent_id=event_id)
-                    supplier = None
-                    if suppliers.filter(supplier__supplier_id=user.id) is not None:
-                        supplier = suppliers.filter(supplier__supplier_id=user.id).first()
-                    elif suppliers.filter(supplier__parent__supplier_id=user.id) is not None:
-                        supplier = suppliers.filter(supplier__parent__supplier_id=user.id).first()
-                    if supplier is not None and supplier.supplier_timeline == 'not_viewed':
-                        supplier.supplier_timeline = 'in_progress'
-                        supplier.save()
-                    supplier_answer_questions = self.get_supplier_answer_question(filtered_data.id, supplier.supplier.id)
+                    ).filter(sourcingRequestEvent_id=event_id, supplier__parent_supplier_id=user.id).first()
+                    if supplier_event is not None and supplier_event.supplier_timeline == 'not_viewed':
+                        supplier_event.supplier_timeline = 'in_progress'
+                        supplier_event.save()
+                    supplier_answer_questions = self.get_supplier_answer_question(filtered_data.id, supplier_event.supplier.id)
                     serializer = SourcingEventSupplierQuestionarySerializer(filtered_data).data
                     questionnaire = serializer.copy()
                     questionnaire['get_questionary_data'] = {
                         'answers_of_question': supplier_answer_questions,
-                        'timeline': supplier.supplier_timeline,
-                        'is_submitted': True if supplier.supplier_timeline in ['done', 'passed', 'rejected'] else False
+                        'timeline': supplier_event.supplier_timeline,
+                        'is_submitted': True if supplier_event.supplier_timeline in ['done', 'passed', 'rejected'] else False
                     }
                     return questionnaire
                 return SourcingEventQuestionarySerializer(filtered_data).data
