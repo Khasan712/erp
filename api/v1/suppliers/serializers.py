@@ -44,7 +44,8 @@ class SupplierDetailSerializers(serializers.ModelSerializer):
         model = Supplier
         fields = (
             'id', 'supplier', 'name', 'account', 'address', 'city', 'postal_code', 'country', 'supplier_status',
-            'bank_name', 'transit_number', 'institution_number', 'bank_account', 'parent', 'get_children'
+            'bank_name', 'transit_number', 'institution_number', 'bank_account', 'parent', 'get_children',
+            'billing_address', 'same_billing_address'
         )
 
     def to_representation(self, instance):

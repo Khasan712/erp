@@ -117,6 +117,8 @@ class SuppliersDetail(APIView):
     def patch(self, request, pk):
         try:
             supplier = self.get_object(pk)
+            if supplier is None:
+                return Response(object_not_found_response(), status=status.HTTP_204_NO_CONTENT)
             supplier_serializer = SupplierDetailSerializers(supplier, data=self.request.data, partial=True)
             if not supplier_serializer.is_valid():
                 return Response(not_serializer_is_valid(supplier_serializer), status=status.HTTP_400_BAD_REQUEST)
