@@ -22,6 +22,7 @@ from .views import (
 
 urlpatterns = [
     path('', ContractListView.as_view()),
+    path('master-agreement/', ContractMasterAgreementListView.as_view()),
     path('task/', ProcessContractTaskView.as_view()),
     path('detail/', ContractDetailView.as_view(), name='contract-detail'),
     path('status/', ContractStatusStatisticsView.as_view()),

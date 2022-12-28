@@ -14,6 +14,7 @@ class Supplier(models.Model):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     create_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='creator')
     supplier = models.OneToOneField(User, on_delete=models.CASCADE, related_name='supplier_user', blank=True, null=True)
+    parent_supplier = models.ForeignKey(User, on_delete=models.CASCADE, related_name='parent_supplier', blank=True, null=True)
     name = models.CharField(max_length=75, unique=True)
     account = models.CharField(max_length=20, unique=True)
     address = models.CharField(max_length=100)
@@ -39,6 +40,10 @@ class Supplier(models.Model):
             self.billing_address = self.parent.billing_address
         if self.supplier is not None and self.supplier.role != 'supplier':
             raise ValidationError('Only suppliers can assign.')
+        if self.supplier is not None:
+            self.parent_supplier = self.supplier
+        if self.parent is not None:
+            self.parent_supplier = self.parent.parent_supplier
         super().save(*args, **kwargs)
 
     def __str__(self) -> str:

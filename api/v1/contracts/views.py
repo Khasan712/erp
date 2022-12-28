@@ -241,6 +241,25 @@ class ContractListView(APIView):
             )
 
 
+class ContractMasterAgreementListView(APIView):
+    permission_classes = (permissions.IsAuthenticated, IsContractAdministrator)
+
+    def get_queryset(self):
+        queryset = Contract.objects.select_related('parent_agreement', 'departement', 'category', 'currency',
+            'organization', 'create_by', 'supplier').filter(organization_id=self.request.user.organization.id).filter(
+            contract_structure='Master Agreement'
+        )
+        return queryset
+
+    def get(self, request):
+        try:
+            return Response(
+                make_pagination(self.request, ContractListSerializers, self.get_queryset()), status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
+
+
 class ContractDetailView(APIView):
     permission_classes = (permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator | IsSupplier)
 
