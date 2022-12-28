@@ -22,14 +22,12 @@ class Supplier(models.Model):
     postal_code = models.CharField(max_length=10)
     country = models.CharField(max_length=70)
     supplier_status = models.CharField(max_length=8, choices=SupplierStatusChoice.choices(), default='active')
-    # banking information's
     billing_address = models.CharField(max_length=255, blank=True, null=True)
     same_billing_address = models.BooleanField(default=False)
     bank_name = models.CharField(max_length=50, blank=True, null=True)
     transit_number = models.CharField(max_length=15, blank=True, null=True)
     institution_number = models.CharField(max_length=10, blank=True, null=True)
     bank_account = models.CharField(max_length=30, blank=True, null=True)
-    # Parent
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='parents')
 
     def save(self, *args, **kwargs):
