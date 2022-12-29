@@ -221,7 +221,7 @@ class ConnectContractWithTask(models.Model):
 
 class DocumentContact(models.Model):
     contract = models.ForeignKey(Contract, on_delete=models.SET_NULL, null=True)
-    document = models.FileField(blank=True, null=True)
+    document = models.FileField(blank=True, null=True, upload_to='contracts/files/')
     is_signing = models.BooleanField(default=False)
 
 
