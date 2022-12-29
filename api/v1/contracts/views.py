@@ -124,6 +124,9 @@ class ContractListView(APIView):
         terms = params.get('terms')
         contract_status = params.get('status')
         q = params.get('q')
+        role = self.request.user.role
+        if role == 'category_manager':
+            queryset = queryset.filter(category_manager_id=self.request.user.id)
         if contract_structure:
             queryset = queryset.filter(contract_structure__in=contract_structure.split(','))
         if category:
@@ -260,7 +263,7 @@ class ContractMasterAgreementListView(APIView):
 
 
 class ContractDetailView(APIView):
-    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator | IsSupplier)
+    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator | IsSupplier | IsCategoryManager)
 
     def get_queryset(self):
         queryset = Contract.objects.select_related('parent_agreement', 'departement', 'category', 'currency',
