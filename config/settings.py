@@ -227,8 +227,8 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
 
-# CORS_ORIGIN_ALLOW_ALL = True
-# CORS_ALLOW_ALL_ORIGINS = True
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_ALL_ORIGINS = True
 # CORS_URLS_REGEX = r'^/api/v1/.*$'
 
 CORS_ALLOW_METHODS = [
@@ -240,17 +240,17 @@ CORS_ALLOW_METHODS = [
     'PUT',
 ]
 
-# CORS_ALLOW_HEADERS = [
-#     'accept',
-#     'accept-encoding',
-#     'authorization',
-#     'content-type',
-#     'dnt',
-#     'origin',
-#     'user-agent',
-#     'x-csrftoken',
-#     'x-requested-with',
-# ]
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
 
 #CORS_ALLOWED_ORIGINS = os.environ['CORS_ALLOWED_ORIGINS'].split(' ')
 #CSRF_TRUSTED_ORIGINS = os.environ['CORS_ALLOWED_ORIGINS'].split(' ')
