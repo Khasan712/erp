@@ -245,7 +245,7 @@ class ContractListView(APIView):
 
 
 class ContractMasterAgreementListView(APIView):
-    permission_classes = (permissions.IsAuthenticated, IsContractAdministrator)
+    permission_classes = (permissions.IsAuthenticated, IsContractAdministrator | IsSourcingDirector)
 
     def get_queryset(self):
         queryset = Contract.objects.select_related(
