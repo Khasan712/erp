@@ -240,17 +240,17 @@ CORS_ALLOW_METHODS = [
     'PUT',
 ]
 
-CORS_ALLOW_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
-]
+# CORS_ALLOW_HEADERS = [
+#     'accept',
+#     'accept-encoding',
+#     'authorization',
+#     'content-type',
+#     'dnt',
+#     'origin',
+#     'user-agent',
+#     'x-csrftoken',
+#     'x-requested-with',
+# ]
 
 #CORS_ALLOWED_ORIGINS = os.environ['CORS_ALLOWED_ORIGINS'].split(' ')
 #CSRF_TRUSTED_ORIGINS = os.environ['CORS_ALLOWED_ORIGINS'].split(' ')
