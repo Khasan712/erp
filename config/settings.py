@@ -231,31 +231,31 @@ SIMPLE_JWT = {
 # CORS_ALLOW_ALL_ORIGINS = True
 CORS_URLS_REGEX = r'^/api/v1/.*$'
 
-CORS_ALLOW_METHODS = [
-    'DELETE',
-    'GET',
-    'OPTIONS',
-    'PATCH',
-    'POST',
-    'PUT',
-]
-
-CORS_ALLOW_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
-    "access-control-allow-origin",
-    'If-Modified-Since',
-    'Cache-Control',
-    'Range',
-    'X-Amz-Date'
-]
+# CORS_ALLOW_METHODS = [
+#     'DELETE',
+#     'GET',
+#     'OPTIONS',
+#     'PATCH',
+#     'POST',
+#     'PUT',
+# ]
+#
+# CORS_ALLOW_HEADERS = [
+#     'accept',
+#     'accept-encoding',
+#     'authorization',
+#     'content-type',
+#     'dnt',
+#     'origin',
+#     'user-agent',
+#     'x-csrftoken',
+#     'x-requested-with',
+#     "access-control-allow-origin",
+#     'If-Modified-Since',
+#     'Cache-Control',
+#     'Range',
+#     'X-Amz-Date'
+# ]
 
 #CORS_ALLOWED_ORIGINS = os.environ['CORS_ALLOWED_ORIGINS'].split(' ')
 #CSRF_TRUSTED_ORIGINS = os.environ['CORS_ALLOWED_ORIGINS'].split(' ')
