@@ -68,7 +68,6 @@ TERMS = (
 
 
 CHOICES = (
-    ('NEW', 'NEW'),
     ('DRAFT', 'DRAFT'),
     ('ACTIVE', 'ACTIVE'),
     ('EXPIRED', 'EXPIRED'),

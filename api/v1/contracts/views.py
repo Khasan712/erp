@@ -284,6 +284,16 @@ class ContractDetailView(APIView):
                 contract_task.is_done = task.get('is_done')
                 contract_task.save()
 
+    def validate_contract(self):
+        data = self.request.data
+        contract_status = data.get('status')
+        if contract_status:
+            if contract_status not in ('DRAFT', 'ACTIVE'):
+                return f'Contract can not change to {contract_status}'
+        if self.get_object() is None:
+            return 'Contract not found.'
+        return True
+
     def get(self, request):
         try:
             if self.get_object() is None:
@@ -297,12 +307,12 @@ class ContractDetailView(APIView):
 
     def patch(self, request):
         try:
-            if self.get_object() is None:
+            if not self.validate_contract():
                 return Response(
                     {
                         "success": False,
                         "message": 'Error occurred.',
-                        "error": 'Contract not found.',
+                        "error": self.validate_contract(),
                         "data": [],
                     }
                 )
