@@ -250,7 +250,11 @@ CORS_ALLOW_HEADERS = [
     'user-agent',
     'x-csrftoken',
     'x-requested-with',
-    "access-control-allow-origin"
+    "access-control-allow-origin",
+    'If-Modified-Since',
+    'Cache-Control',
+    'Range',
+    'X-Amz-Date'
 ]
 
 #CORS_ALLOWED_ORIGINS = os.environ['CORS_ALLOWED_ORIGINS'].split(' ')

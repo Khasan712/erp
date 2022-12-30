@@ -24,13 +24,9 @@ services:
     restart: always
     volumes:
       - ./nginx/conf/:/etc/nginx/conf.d/:rw
-      # - ./certbot/www:/var/www/certbot/:ro
       - static_files:/home/app/staticfiles/
       - static:/home/app/static/
       - media:/home/app/media/
-
-      # - ./certbot/conf:/etc/letsencrypt
-#      - ./certbot/www:/var/www/certbot
     depends_on:
       - web
     ports:
@@ -38,15 +34,6 @@ services:
       - 1443:443
     env_file:
       - .env
-
-
-#  certbot:
-#    image: certbot/certbot
-#    container_name: certbot
-#    volumes:
-      # - ./certbot/conf:/etc/letsencrypt:rw
-#      - ./certbot/www:/var/www/certbot:rw
-    # command: certonly --webroot -w /var/www/certbot --force-renewal --email info.kamalov@gmail.com -d backend.jmb-inventory-system.com --agree-tos
 
 
   mysql:
