@@ -48,6 +48,7 @@ def check_fixed_terms():
             save_updated_contract.save()
 
 
+
 @app.task
 def check_auto_renew_terms():
     auto_renews = Contract.objects.select_related('parent_agreement', 'departement', 'category', 'currency',
