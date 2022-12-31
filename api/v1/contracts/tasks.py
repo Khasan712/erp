@@ -5,7 +5,7 @@ from api.v1.users.utils import (
     send_email_fixed
 )
 from .models import (
-    ContractExperationDayAndStatus,
+    ContractExpirationDayAndStatus,
     ContractNotificationDay,
     Contract,
 )
@@ -34,7 +34,7 @@ def check_fixed_terms():
         terms='Fixed', expiration_date=datetime.datetime.today(), is_send_fixed=False)
     with transaction.atomic():
         for contract in fixed_terms:
-            save_updated_contract = ContractExperationDayAndStatus(
+            save_updated_contract = ContractExpirationDayAndStatus(
                 contract_id=contract.id,
                 from_contract_status=contract.status,
                 old_expiration_day=contract.expiration_date
@@ -55,7 +55,7 @@ def check_auto_renew_terms():
             'organization', 'create_by', 'supplier').filter(terms='Auto Renew', expiration_date=datetime.datetime.today())
     with transaction.atomic():
         for contract in auto_renews:
-            save_updated_contract = ContractExperationDayAndStatus(
+            save_updated_contract = ContractExpirationDayAndStatus(
                 contract_id=contract.id,
                 from_contract_status=contract.status,
                 old_expiration_day=contract.expiration_date

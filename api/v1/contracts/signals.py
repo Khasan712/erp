@@ -1,6 +1,8 @@
 from django.db import transaction
 from django.db.models.signals import post_save, pre_delete, pre_save
 from django.dispatch import receiver
+
+from .history_contract_models import HistoryContract
 from .models import (
     Contract,
     ContractNotificationDay,
@@ -60,7 +62,13 @@ def notify_supplier(contract, supplier):
 
 
 def save_contract_history(instance):
-    pass
+    instance_values = instance.__dict__.copy()
+    instance_values['contract_id'] = instance_values['id']
+    instance_values['contract_amendment'] = instance_values['amendment']
+    del instance_values['_state']
+    del instance_values['id']
+    del instance_values['amendment']
+    a = HistoryContract.objects.create(**instance_values)
 
 
 @receiver(post_save, sender=Contract)
@@ -68,50 +76,7 @@ def contract_signals(sender, instance, created, **kwargs):
     if created:
         create_notify_days(instance)
         create_task_for_contract(instance)
-        notify_supplier(instance.id, instance.supplier)
-    if not created and instance.status == 'ACTIVE' or instance.status == 'EXPIRED':
+        # notify_supplier(instance.id, instance.supplier)
+    if not created and instance.status in ('ACTIVE', 'EXPIRED'):
         save_contract_history(instance)
-    
-    # if not created:
-    #     history = ContractHistory(
-    #         contract=instance.id,
-    #         amendment=instance.amendment,
-    #         effective_date=instance.effective_date,
-    #         expiration_date=instance.expiration_date,
-    #         duration=instance.duration,
-    #         name=instance.name,
-    #         description=instance.descriptionDescription,
-    #         contract_structure=instance.contract_structure,
-    #         contract_amount=instance.contract_amount,
-    #         category=instance.category,
-    #         currency=instance.currency,
-    #         terms=instance.terms,
-    #         contract_notice=instance.contract_notice,
-    #         notification=instance.notification,
-    #         supplier=instance.supplier,
-    #         departement=instance.departement,
-    #         parent_agreement=instance.parent_agreement
-    #     )
-    #     history.save()
-
-
-
-
-
-# @receiver(post_save, sender=Contract)
-# def save_contract_updates(sender, instance, created, **kwargs):
-#     if instance.status == 'ACTIVE' or instance.status == 'EXPIRED':
-#         contract_fields = model_to_dict(instance)
-#         contract_fields['category_manager_id'] = contract_fields['category_manager']
-#         del contract_fields['id']
-#         del contract_fields['category_manager']
-#
-#         print(contract_fields)
-#
-#         history = HistoryContract(
-#             in_contract_id=instance.id,
-#             **contract_fields
-#         )
-#         history.save()
-
 

@@ -16,9 +16,14 @@ from .history_contract_models import HistoryContract
 
 
 admin.site.register(Category)
-admin.site.register(Contract,)
 admin.site.register(HistoryContract)
 admin.site.register(ContractExpirationDayAndStatus)
+
+
+@admin.register(Contract)
+class ContractAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'contract_number', 'status', 'currency', 'contract_amount', 'create_by',
+                    'category_manager', 'organization')
 
 
 @admin.register(ContractNotificationDay)
