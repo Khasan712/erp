@@ -8,8 +8,7 @@ from .models import (
     ContractTask
 )
 import datetime
-from django.forms import model_to_dict
-from .history_contract_models import HistoryContract
+# from .history_contract_models import HistoryContract
 from ..chat.notification_models.notifications import ContractNotification
 from ..chat.views import send_to_supplier_from_contract
 from ..users.models import User
@@ -60,12 +59,19 @@ def notify_supplier(contract, supplier):
     send_to_supplier_from_contract(supplier.supplier.email)
 
 
+def save_contract_history(instance):
+    pass
+
+
 @receiver(post_save, sender=Contract)
 def contract_signals(sender, instance, created, **kwargs):
     if created:
         create_notify_days(instance)
         create_task_for_contract(instance)
         notify_supplier(instance.id, instance.supplier)
+    if not created and instance.status == 'ACTIVE' or instance.status == 'EXPIRED':
+        save_contract_history(instance)
+    
     # if not created:
     #     history = ContractHistory(
     #         contract=instance.id,
@@ -107,43 +113,5 @@ def contract_signals(sender, instance, created, **kwargs):
 #             **contract_fields
 #         )
 #         history.save()
-
-
-
-
-#     if created:
-#         if instance.status == 'ACTIVE' or instance.status == 'EXPIRED':
-#             history = HistoryContract(
-#                 contract=instance.id,
-#
-#                 category_manager=instance.category_manager,
-#                 contract_owner=instance.contract_owner,
-#                 lawyer=instance.lawyer,
-#                 project_owner=instance.project_owner,
-#
-#                 creation_date=instance.creation_date,
-#                 effective_date=instance.effective_date,
-#                 expiration_date=instance.expiration_date,
-#                 duration=instance.duration,
-#
-#                 #
-#                 # amendment=instance.amendment,
-#                 # name=instance.name,
-#                 # description=instance.descriptionDescription,
-#                 # contract_structure=instance.contract_structure,
-#                 # contract_amount=instance.contract_amount,
-#                 # category=instance.category,
-#                 # currency=instance.currency,
-#                 # terms=instance.terms,
-#                 # contract_notice=instance.contract_notice,
-#                 # notification=instance.notification,
-#                 # supplier=instance.supplier,
-#                 # departement=instance.departement,
-#                 # parent_agreement=instance.parent_agreement
-#                 **instance
-#             )
-#             history.save()
-# #
-
 
 

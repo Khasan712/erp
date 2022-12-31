@@ -195,7 +195,7 @@ class ContractListView(APIView):
     def get(self, request):
         try:
             return Response(
-                make_pagination(self.request, ContractListSerializers, self.get_queryset()), status=status.HTTP_200_OK
+                make_pagination(self.request, ContractListSerializers, self.get_queryset().order_by('-id')), status=status.HTTP_200_OK
             )
         except Exception as e:
             return Response(

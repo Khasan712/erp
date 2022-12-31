@@ -112,6 +112,9 @@ class Contract(models.Model):
     supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, blank =True, null=True)
     serviceCommodityConsultant = models.CharField(max_length=10, choices=ServiceChoice.choices(), blank=True, null=True)
 
+    def __str__(self):
+        return f'{self.name}: {self.contract_amount}'
+
     def save(self, *args, **kwargs):
         if self.status == 'ACTIVE' or self.status == 'EXPIRED':
             self.count_changes += 1
@@ -161,6 +164,19 @@ class Contract(models.Model):
             'contract'
         ).filter(contract_id=self.id).values('id', 'document',)
         return contract_documents if contract_documents else None
+
+
+class ContractExperationDayAndStatus(models.Model):
+    contract = models.ForeignKey(Contract, on_delete=models.CASCADE)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    from_contract_status = models.CharField(max_length=8, choices=CHOICES)
+    to_contract_status = models.CharField(max_length=8, choices=CHOICES)
+    old_expiration_day = models.DateField()
+    new_expiration_day = models.DateField()
+
+    def __str__(self):
+        return f'{self.contract.name}: ID - {self.contract.id}'
 
 
 class ContractService(models.Model):
