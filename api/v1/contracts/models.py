@@ -166,7 +166,7 @@ class Contract(models.Model):
         return contract_documents if contract_documents else None
 
 
-class ContractExperationDayAndStatus(models.Model):
+class ContractExpirationDayAndStatus(models.Model):
     contract = models.ForeignKey(Contract, on_delete=models.CASCADE)
 
     created_at = models.DateTimeField(auto_now_add=True)

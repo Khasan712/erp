@@ -7,7 +7,8 @@ from .models import (
     Departement, ContractService, ContractConsultant, ContractCommodity,
     ContractTask,
     ConnectContractWithTask,
-    DocumentContact
+    DocumentContact,
+    ContractExpirationDayAndStatus
 )
 from .history_contract_models import HistoryContract
 
@@ -17,6 +18,7 @@ from .history_contract_models import HistoryContract
 admin.site.register(Category)
 admin.site.register(Contract,)
 admin.site.register(HistoryContract)
+admin.site.register(ContractExpirationDayAndStatus)
 
 
 @admin.register(ContractNotificationDay)
