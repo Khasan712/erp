@@ -86,7 +86,7 @@ def contract_signals(sender, instance, created, **kwargs):
         create_task_for_contract(instance)
         create_contract_number(instance)
         notify_supplier(instance.id, instance.supplier)
-    elif not created and instance['status'] in ['ACTIVE', 'EXPIRED']:
+    elif not created and instance.status in ['ACTIVE', 'EXPIRED']:
         instance['amendment'] += 1
         save_contract_history(instance)
 
