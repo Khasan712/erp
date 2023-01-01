@@ -10,7 +10,6 @@ from .models import (
     ContractTask
 )
 import datetime
-# from .history_contract_models import HistoryContract
 from ..chat.notification_models.notifications import ContractNotification
 from ..chat.views import send_to_supplier_from_contract
 from ..users.models import User
@@ -68,7 +67,16 @@ def save_contract_history(instance):
     del instance_values['_state']
     del instance_values['id']
     del instance_values['amendment']
-    a = HistoryContract.objects.create(**instance_values)
+    HistoryContract.objects.create(**instance_values)
+
+
+def create_contract_number(instance):
+    contracts = Contract.objects.select_related(
+        'category_manager', 'contract_owner', 'lawyer', 'project_owner', 'parent_agreement', 'departement', 'category',
+        'currency', 'organization', 'create_by', 'supplier'
+    )
+    instance.contract_number = f'EM - {contracts.count()+1}'
+    instance.save()
 
 
 @receiver(post_save, sender=Contract)
@@ -76,7 +84,10 @@ def contract_signals(sender, instance, created, **kwargs):
     if created:
         create_notify_days(instance)
         create_task_for_contract(instance)
-        # notify_supplier(instance.id, instance.supplier)
-    if not created and instance.status in ('ACTIVE', 'EXPIRED'):
-        save_contract_history(instance)
+        create_contract_number(instance)
+        notify_supplier(instance.id, instance.supplier)
+    if not created:
+        if instance['status'] in ('ACTIVE', 'EXPIRED'):
+            instance['amendment'] += 1
+            save_contract_history(instance)
 

@@ -115,13 +115,6 @@ class Contract(models.Model):
     def __str__(self):
         return f'{self.name}: {self.contract_amount}'
 
-    def save(self, *args, **kwargs):
-        if self.status == 'ACTIVE' or self.status == 'EXPIRED':
-            self.count_changes += 1
-        if self.contract_number is None:
-            self.contract_number = 'EM-'+str(Contract.objects.count()+1)
-        super(Contract, self).save(*args, **kwargs)
-
     @property
     def get_agreements(self):
         agreements = Contract.objects.select_related('parent_agreement', 'departement', 'category', 'currency',

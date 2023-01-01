@@ -26,7 +26,7 @@ class HistoryContract(models.Model):
 
     # Contract Attributes :
     name = models.CharField(max_length=100, blank=True, null=True)
-    contract_number = models.CharField(max_length=15, unique=True, blank=True, null=True)
+    contract_number = models.CharField(max_length=15, blank=True, null=True)
     description = models.CharField(max_length=500, blank=True, null=True)
     parent_agreement = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True, related_name='history_contract_parrent')
     departement = models.ForeignKey(Departement, on_delete=models.CASCADE, blank =True, null=True)
