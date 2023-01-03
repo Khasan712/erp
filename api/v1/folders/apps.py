@@ -1,16 +1,15 @@
 from django.apps import AppConfig
 
 
-class SuppliersConfig(AppConfig):
+class FoldersConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'api.v1.suppliers'
-    label = 'suppliers'
+    name = 'api.v1.folders'
+    label = 'folders'
 
     def ready(self):
         try:
             from . import (
-                handlers,
-                signals
+                signals,
             )
         except ImportError:
             pass

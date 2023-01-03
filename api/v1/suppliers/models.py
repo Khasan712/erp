@@ -30,15 +30,15 @@ class Supplier(models.Model):
     bank_account = models.CharField(max_length=30, blank=True, null=True)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='parents')
 
-    def save(self, *args, **kwargs):
-        if self.account == '':
-            suppliers_qty = Supplier.objects.select_related('organization', 'create_by', 'supplier', 'parent').count()
-            self.account = suppliers_qty + 1
-        if self.parent is not None and self.same_billing_address:
-            self.billing_address = self.parent.billing_address
-        if self.supplier is not None and self.supplier.role != 'supplier':
-            raise ValidationError('Only suppliers can assign.')
-        super().save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     # if self.account == '':
+    #     #     suppliers_qty = Supplier.objects.select_related('organization', 'create_by', 'supplier', 'parent').count()
+    #     #     self.account = suppliers_qty + 1
+    #     # if self.parent is not None and self.same_billing_address:
+    #     #     self.billing_address = self.parent.billing_address
+    #     # if self.supplier is not None and self.supplier.role != 'supplier':
+    #     #     raise ValidationError('Only suppliers can assign.')
+    #     super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         return f'{self.name}'

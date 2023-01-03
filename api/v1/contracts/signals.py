@@ -12,7 +12,6 @@ from .models import (
 import datetime
 from ..chat.notification_models.notifications import ContractNotification
 from ..chat.views import send_to_supplier_from_contract
-from ..users.models import User
 
 
 def create_notify_days(instance):

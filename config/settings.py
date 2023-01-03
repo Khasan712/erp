@@ -62,6 +62,7 @@ INSTALLED_APPS += [
     'api.v1.chat',
     'api.v1.sourcing',
     'api.v1.items',
+    'api.v1.folders',
 ]
 
 MIDDLEWARE = [

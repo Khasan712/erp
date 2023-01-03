@@ -12,7 +12,6 @@ from api.v1.suppliers.models import (
 )
 
 
-
 class ChatGetMenu(generics.ListAPIView):
     queryset = Chat.objects.select_related('sender', 'receiver', 'answer_for')
     serializer_class = ChatSerializer
@@ -38,7 +37,6 @@ class ChatGetMenu(generics.ListAPIView):
                     "data": [],
                 }, status=status.HTTP_400_BAD_REQUEST
             )
-    
 
 
 class ChatListView(generics.ListCreateAPIView):

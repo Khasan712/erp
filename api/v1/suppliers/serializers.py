@@ -14,16 +14,6 @@ class SupplierSerializer(serializers.ModelSerializer):
                   'institution_number', 'transit_number', 'bank_account', 'supplier', 'parent',
                   "billing_address", "same_billing_address")
 
-    def create(self, validated_data):
-        print(validated_data)
-        obj = Supplier.objects.create(**validated_data)
-        if obj.supplier is not None:
-            obj.parent_supplier = validated_data.get('supplier')
-        if obj.parent is not None:
-            obj.parent_supplier = validated_data.get('parent').parent_supplier
-        obj.save()
-        return obj
-
 
 class SupplierGetSerializer(serializers.ModelSerializer):
     class Meta:
@@ -62,34 +52,6 @@ class SupplierDetailSerializers(serializers.ModelSerializer):
                 'account': instance.parent.account
             }
         return response
-
-    def update(self, instance, validated_data):
-        instance.supplier = validated_data.get('supplier', instance.supplier)
-        instance.parent_supplier = validated_data.get('parent_supplier', instance.parent_supplier)
-        instance.name = validated_data.get('name', instance.name)
-        instance.account = validated_data.get('account', instance.account)
-        instance.address = validated_data.get('address', instance.address)
-        instance.city = validated_data.get('city', instance.city)
-        instance.postal_code = validated_data.get('postal_code', instance.postal_code)
-        instance.country = validated_data.get('country', instance.country)
-        instance.supplier_status = validated_data.get('supplier_status', instance.supplier_status)
-        instance.billing_address = validated_data.get('billing_address', instance.billing_address)
-        instance.same_billing_address = validated_data.get('same_billing_address', instance.same_billing_address)
-        instance.bank_name = validated_data.get('bank_name', instance.bank_name)
-        instance.transit_number = validated_data.get('transit_number', instance.transit_number)
-        instance.institution_number = validated_data.get('institution_number', instance.institution_number)
-        instance.bank_account = validated_data.get('bank_account', instance.bank_account)
-        instance.parent = validated_data.get('parent', instance.parent)
-        if validated_data.get('parent') is not None:
-            instance.supplier = None
-            instance.parent_supplier = validated_data.get('parent').parent_supplier
-        else:
-            if instance.supplier is None:
-                return serializers.ValidationError('Select supplier.')
-            instance.parent = None
-            instance.parent_supplier = instance.supplier
-        instance.save()
-        return instance
 
 
 class SupplierMasCreateSerializer(serializers.Serializer):
