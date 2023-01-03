@@ -15,7 +15,7 @@ from django.core.exceptions import ValidationError
 import jwt
 
 from api.v1.commons.pagination import make_pagination
-from api.v1.commons.views import exception_response, get_serializer_errors, get_serializer_valid_response, \
+from api.v1.commons.views import exception_response, get_serializer_errors, get_serializer_valid_response, not_serializer_is_valid, \
     object_not_found_response, serializer_valid_response
 from api.v1.users.models import User
 from django.conf import settings
@@ -36,7 +36,8 @@ from api.v1.contracts.models import (
     Contract_Type,
     Category,
     Cost_Center,
-    Currency, ContractTask, ConnectContractWithTask
+    Currency, ContractTask, ConnectContractWithTask,
+    DocumentContact
 )
 from api.v1.users.services import make_errors
 from api.v1.users.permissions import (
@@ -287,12 +288,30 @@ class ContractDetailView(APIView):
     def validate_contract(self):
         data = self.request.data
         contract_status = data.get('status')
+        if self.request.user.role != 'contract_administrator':
+            return 'You do not have permission!!!'
         if contract_status:
             if contract_status not in ('DRAFT', 'ACTIVE'):
                 return f'Contract can not change to {contract_status}'
         if self.get_object() is None:
             return 'Contract not found.'
         return True
+    
+    def update_documents(self, documents: list, contract_id: int):
+        contract = self.get_queryset().get(id=contract_id)
+        with transaction.atomic():
+            for document in documents:
+                contract_document = DocumentContact.objects.select_related('contract').filter(id=document.get('id')).first()
+                if contract_document:
+                    document['contract'] = contract
+                    serializer = DocumentContactSerializers(contract_document, data=document, partial=True)
+                    if not serializer.is_valid():
+                        raise ValidationError(not_serializer_is_valid(serializer.errors))
+                    serializer.save()
+                else:
+                    pass
+            
+                
 
     def get(self, request):
         try:
@@ -318,6 +337,7 @@ class ContractDetailView(APIView):
                 )
             data = self.request.data
             contract_tasks = data.get('tasks')
+            documents = data.get('documents')
             service_commodity_consultant = data.get('serviceCommodityConsultant')
             items = data.get('items')
             serializer = ContractSerializer(self.get_object(), data=data, partial=True)
@@ -327,6 +347,8 @@ class ContractDetailView(APIView):
                 serializer.save()
                 if contract_tasks is not None:
                     self.update_contract_tasks(contract_tasks, serializer.data.get('id'))
+                if documents:
+                    self.update_documents(documents, serializer.data.get('id'))
 
         except Exception as e:
             return Response(
