@@ -1,39 +1,32 @@
 from django.db import models
-from .mixins import DocumentFolderMixin
 from api.v1.users.models import User
-# Create your models here.
+from api.v1.organization.models import Organization
 
 
-class Folder(DocumentFolderMixin):
-    name = models.CharField(max_length=255)
+class FolderOrDocument(models.Model):
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
+    creator = models.ForeignKey(User, on_delete=models.CASCADE)
+    name = models.CharField(max_length=255, blank=True, null=True)
+    document = models.FileField(upload_to='Folders/Documents/', blank=True, null=True)
+    is_folder = models.BooleanField(default=True)
+    is_trashed = models.BooleanField(default=False)
+    created_at = models.DateField(auto_now_add=True)
+    updated_at = models.DateField(blank=True, null=True, editable=False)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True)
 
     def __str__(self):
-        return f'{self.name} - {self.creator.first_name}'
-
-    @property
-    def get_documents(self):
-        pass
-
-
-class Document(DocumentFolderMixin):
-    document = models.FileField(upload_to='Folders/Documents/')
-    folder = models.ForeignKey(Folder, on_delete=models.SET_NULL, blank=True, null=True, related_name='document_folder')
-
-    def __str__(self):
-        return f'{self.document}'
+        return f'{self.name} - {self.id}: {self.is_folder}'
 
 
 class GiveAccessToDocumentFolder(models.Model):
-    document = models.ForeignKey(Document, on_delete=models.CASCADE, blank=True, null=True)
-    folder = models.ForeignKey(Folder, on_delete=models.CASCADE, blank=True, null=True)
+    folder_or_document = models.ForeignKey(FolderOrDocument, on_delete=models.CASCADE, blank=True, null=True)
     editable = models.BooleanField(default=False)
     expiration_date = models.DateField()
     created_at = models.DateField(auto_now_add=True)
     updated_at = models.DateField(blank=True, null=True, editable=False)
 
     def __str__(self):
-        return f'{self.folder}: {self.document}: {self.editable}'
+        return f'{self.folder_or_document}: {self.editable}'
 
 
 class GiveAccessToDocumentFolderUser(models.Model):
