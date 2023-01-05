@@ -37,4 +37,3 @@ class GiveAccessToDocumentFolderUser(models.Model):
         return f'{self.user.first_name}: {self.give_access}'
 
 
-

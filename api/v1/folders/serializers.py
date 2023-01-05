@@ -25,3 +25,19 @@ class ListFolderOrDocumentSerializer(serializers.ModelSerializer):
                 'name': instance.parent.name,
             }
         return response
+
+
+class PatchAdministratorFolderOrDocumentSerializer(serializers.ModelSerializer):
+    """ Only contract administrator can remove folder or document from trash or delete """
+
+    class Meta:
+        model = FolderOrDocument
+        fields = ('id', 'is_trashed')
+
+
+class PatchFolderOrDocumentSerializer(serializers.ModelSerializer):
+    """ Only contract administrator can remove folder or document from trash or delete """
+
+    class Meta:
+        model = FolderOrDocument
+        fields = ('id', 'name', 'document', 'is_trashed')

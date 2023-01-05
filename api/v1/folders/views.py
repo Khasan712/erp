@@ -1,19 +1,22 @@
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.shortcuts import render
 from rest_framework import generics, views, status, permissions
 from django.db.models import Q
 from rest_framework.response import Response
 from .serializers import (
-    PostFolderOrDocumentSerializer, ListFolderOrDocumentSerializer,
+    PostFolderOrDocumentSerializer, ListFolderOrDocumentSerializer, PatchFolderOrDocumentSerializer,
+    PatchAdministratorFolderOrDocumentSerializer,
 )
 from .models import (
     FolderOrDocument,
 )
 from ..commons.pagination import make_pagination
 from ..commons.views import (
-    exception_response, not_serializer_is_valid, serializer_valid_response,
+    exception_response, not_serializer_is_valid, serializer_valid_response, object_deleted_response,
 )
-from ..users.permissions import IsSourcingDirector
+from ..users.permissions import IsSourcingDirector, IsContractAdministrator
+from ..users.services import make_errors
 
 
 class PostListFolderOrDocumentApi(views.APIView):
@@ -61,6 +64,51 @@ class PostListFolderOrDocumentApi(views.APIView):
             return Response(make_pagination(request, serializer, filtered_queryset), status=status.HTTP_200_OK)
 
 
+class PatchDeleteFolderOrDocumentApi(views.APIView):
+    """ Update document or folder """
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_queryset(self):
+        return FolderOrDocument.objects.select_related('organization', 'creator', 'parent')
+
+    def get_object(self, id):
+        try:
+            item = self.get_queryset().get(id=id)
+        except Exception as e:
+            raise ValidationError('Object not found.')
+        else:
+            return item
+
+    def patch(self, request, id):
+        try:
+            user = self.request.user
+            if user.role == 'contract_administrator':
+                serializer = PatchAdministratorFolderOrDocumentSerializer(
+                    self.get_object(id), data=self.request.data, partial=True
+                )
+                if not serializer.is_valid:
+                    return Response(not_serializer_is_valid(serializer.errors), status=status.HTTP_400_BAD_REQUEST)
+                serializer.save()
+            else:
+                serializer = PatchFolderOrDocumentSerializer(self.get_object(id), data=self.request.data, partial=True)
+                if not serializer.is_valid:
+                    return Response(not_serializer_is_valid(serializer.errors), status=status.HTTP_400_BAD_REQUEST)
+                serializer.save()
+        except Exception as e:
+            return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(serializer_valid_response(serializer), status=status.HTTP_200_OK)
+
+    def delete(self, request, id):
+        try:
+            item = self.get_object(id)
+            item.delete()
+        except Exception as e:
+            return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(object_deleted_response(), status=status.HTTP_204_NO_CONTENT)
+
+
 class ListUsersDocumentFolderAPI(views.APIView):
     """ This API for Sourcing director to see all employee documents and folders """
     permission_classes = (permissions.IsAuthenticated, IsSourcingDirector)
@@ -93,4 +141,49 @@ class ListUsersDocumentFolderAPI(views.APIView):
             return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response(make_pagination(request, serializer, filtered_queryset), status=status.HTTP_200_OK)
+
+
+class RemoveTrashOrDeleteFoldeOrDocumentApi(views.APIView):
+    """ This api for remove folder or document from trash or delete """
+
+    permission_classes = (permissions.IsAuthenticated, IsContractAdministrator)
+
+    def get_queryset(self):
+        return FolderOrDocument.objects.select_related('organization', 'creator', 'parent')
+
+    def get_object(self, id):
+        try:
+            item = self.get_queryset().get(id=id)
+        except Exception as e:
+            raise ValidationError('Object not found.')
+        else:
+            return item
+
+    def remove_stuffs(self, items: list):
+        with transaction.atomic():
+            for item in items:
+                item_data = self.get_object(item['id'])
+                item['is_trashed'] = False
+                serializer = RemoveDocumentOrFolderSerializer(item_data, data=item)
+                if not serializer.is_valid():
+                    raise ValidationError(message=make_errors(serializer.errors))
+                serializer.save
+
+
+    def patch(self, request):
+        """ Recovre stuffs from trashes """
+        try:
+            user = self.request.user
+            data = self.request.data
+            self.remove_stuffs(data)
+        except Exception as e:
+            return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {
+                'success': True,
+                'message': ""
+            }
+        )
+
+
 
