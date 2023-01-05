@@ -41,3 +41,19 @@ class PatchFolderOrDocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = FolderOrDocument
         fields = ('id', 'name', 'document', 'is_trashed')
+
+
+class TrashedFolderOrDocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FolderOrDocument
+        fields = ('id', 'name', 'document', 'is_trashed', 'parent')
+
+    def to_representation(self, instance):
+        response = super(TrashedFolderOrDocumentSerializer, self).to_representation(instance)
+        if response.get('parent'):
+            response['parent'] = {
+                'id': instance.parent.id,
+                'name': instance.parent.name,
+            }
+        return response
+

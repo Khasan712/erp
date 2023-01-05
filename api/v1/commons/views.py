@@ -68,7 +68,7 @@ def object_not_found_response():
 def object_deleted_response():
     return {
         "success": False,
-        "message": 'Object deleted successfully.',
+        "message": 'Objects deleted successfully.',
         "error": [],
         "data": [],
     }
