@@ -18,7 +18,7 @@ from .views import (
     ContractCategoryStatisticsView,
     ProcessContractTaskView,
     ContractDetailView,
-    ContractMasterAgreementListView
+    ContractMasterAgreementListView, ContractToExelApi
 )
 
 urlpatterns = [
@@ -54,5 +54,7 @@ urlpatterns = [
 
     # API for terms types
     path('currency', CurrencyListView.as_view()),
-    path('currency/detail/<id>', CurrencyListDetailView.as_view())
+    path('currency/detail/<id>', CurrencyListDetailView.as_view()),
+
+    path('to-exel/', ContractToExelApi.as_view())
 ]

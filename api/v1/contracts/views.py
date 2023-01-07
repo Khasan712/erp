@@ -693,14 +693,75 @@ class ContractListDetailView(APIView):
 class MassUploadView(APIView):
 
     def post(self, request):
-        serializer = MassUploadSerializer(data = request.data)
+        serializer = MassUploadSerializer(data=request.data)
         file = request.data['file']
         file = pd.read_excel(file)
         file = pd.DataFrame(data=file)
         for i in range(0, len(file)):
-            Contract.objects.create(name= file.iloc[i][0], description=file.iloc[i][1], organization=request.user.organization)
+            Contract.objects.create(name=file.iloc[i][0], description=file.iloc[i][1], organization=request.user.organization)
         return Response("ok")
 
+
+from openpyxl import Workbook
+from io import BytesIO
+# from decouple import config
+from openpyxl.styles import Alignment, Font, Protection
+from django.core.files import File
+
+class ContractToExelApi(APIView):
+
+    def post(self, request):
+        excelfile = BytesIO()
+        workbook = Workbook()
+        workbook.remove(workbook.active)
+        worksheet = workbook.create_sheet(title='Sheet', index=1)
+        # workbook.security.workbookPassword = config('PASSWORD', default='12345data')
+        # workbook.security.lockStructure = config('PROTECT', default=True, cast=bool)
+        # workbook.security.revisionsPassword = config('PASSWORD', default='12345data')
+        # worksheet.protection.sheet = config('PROTECT', default=True, cast=bool)
+        # worksheet.protection.formatCells = config('PROTECT', default=False, cast=bool)
+
+        worksheet.sheet_properties.tabColor = '1072BA'
+        worksheet.freeze_panes = 'I2'
+
+        coin_queryset = Contract.objects.all()
+        columns = ['Contract number', ]
+        row_num = 1
+
+        # Assign the titles for each cell of the header
+        for col_num, column_title in enumerate(columns, 1):
+            cell = worksheet.cell(row=row_num, column=col_num)
+            cell.value = column_title
+            cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+            cell.font = Font(bold=True)
+        # Iterate through all coins
+        for _, coin in enumerate(coin_queryset, 1):
+            row_num += 1
+
+            # Define the data for each cell in the row
+            row = [
+                coin.contract_number,
+            ]
+
+            # Assign the data for each cell of the row
+            for col_num, cell_value in enumerate(row, 1):
+                cell = worksheet.cell(row=row_num, column=col_num)
+                cell.value = cell_value
+                cell.protection = Protection(locked=True)
+        workbook.save(excelfile)
+        file = 'latest-coin-list.xlsx', excelfile.getvalue()
+        file1 = excelfile.getvalue()
+        with open(file1[0], "r") as downloaded_file:
+            # self.image.save(os.path.basename(self.source_url), File(downloaded_file), save=False)
+            document = DocumentContact.objects.create(document=File(downloaded_file))
+
+
+        print(file)
+        return Response(
+            {
+                'file': document.last().values('document', ),
+            }
+        )
 
 
 

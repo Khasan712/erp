@@ -232,5 +232,8 @@ class DocumentContact(models.Model):
     document = models.FileField(blank=True, null=True, upload_to='contracts/files/')
     is_signing = models.BooleanField(default=False)
 
+    def __str__(self):
+        return self.document
+
 
 
