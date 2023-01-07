@@ -134,10 +134,12 @@ class ListUsersDocumentFolderAPI(views.APIView):
     def get_filter(self):
         params = self.request.query_params
         user = self.request.user
-        role = params.get('role')
-        if not role:
+        selected_user = params.get('user')
+        if not selected_user:
             raise ValidationError('Select role')
-        queryset = self.get_queryset().filter(is_trashed=False, organization_id=user.organization.id, creator_id=role)
+        queryset = self.get_queryset().filter(
+            is_trashed=False, organization_id=user.organization.id, creator_id=selected_user
+        )
         q = params.get('q')
         parent_id = params.get('parent')
         if not parent_id:
