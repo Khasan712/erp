@@ -52,7 +52,7 @@ class PostListFolderOrDocumentApi(views.APIView):
         except Exception as e:
             return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response(serializer_valid_response(), status=status.HTTP_201_CREATED)
+            return Response(serializer_valid_response(serializer), status=status.HTTP_201_CREATED)
 
     def get(self, request):
         try:
