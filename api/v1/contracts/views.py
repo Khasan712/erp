@@ -1,24 +1,18 @@
 import os
+
+import openpyxl
 from rest_framework.response import Response
-from django.db.models.functions import Coalesce
+from openpyxl import Workbook
 from django.db.models import Q, Sum, Avg, Count
 from rest_framework.views import APIView
 import pandas as pd
-import openpyxl
-import datetime
 from rest_framework import status, permissions, generics
 from docx2pdf import convert
 from django.db import transaction
-from asgiref.sync import sync_to_async
-from rest_framework.decorators import api_view
 from django.core.exceptions import ValidationError
-import jwt
-
 from api.v1.commons.pagination import make_pagination
 from api.v1.commons.views import exception_response, get_serializer_errors, get_serializer_valid_response, not_serializer_is_valid, \
     object_not_found_response, serializer_valid_response
-from api.v1.users.models import User
-from django.conf import settings
 from api.v1.contracts.serializers import (
     ContractFileUploadSerializer,
     ContractSerializer,
@@ -702,66 +696,222 @@ class MassUploadView(APIView):
         return Response("ok")
 
 
-from openpyxl import Workbook
-from io import BytesIO
-# from decouple import config
 from openpyxl.styles import Alignment, Font, Protection
-from django.core.files import File
+
 
 class ContractToExelApi(APIView):
+    permission_classes = (permissions.IsAuthenticated, )
+
+    def get_queryset(self):
+        queryset = Contract.objects.select_related(
+            'parent_agreement', 'departement', 'category', 'currency', 'organization', 'create_by', 'supplier'
+        ).filter(
+            organization_id=self.request.user.organization.id
+        )
+        return queryset
+
+    def get_contract_fields(self):
+        fields = {
+            'category_manager': 'Category manager',
+            'contract_owner': 'Contract owner',
+            'lawyer': 'Lawyer',
+            'project_owner': 'Project owner',
+            'creation_date': 'Creation date',
+            'effective_date': 'Effective date',
+            'expiration_date': 'Expiration date',
+            'duration': 'Duration',
+            'name': 'Name',
+            'contract_number': 'Contract number',
+            'description': 'Description',
+            'parent_agreement': 'Parent agreement',
+            'departement': 'Department',
+            'contract_structure': 'Contract structure',
+            'contract_amount': 'Contract amount',
+            'category': 'Category',
+            'currency': 'Currency',
+            'organization': 'Organization',
+            'create_by': 'Create by',
+            'terms': 'Terms',
+            'contract_notice': 'Contract notice',
+            'amendment': 'Amendment',
+            'status': 'Status',
+            'count_changes': 'Count changes',
+            'notification': 'Notification',
+            'supplier': 'Supplier',
+        }
+        return fields
+
+    def get_filtered_data(self):
+        data = self.request.data
+        fields = data.get('fields')
+        excel_header = []
+        if not fields:
+            return 'Choose one of the field.'
+        for field in fields:
+            if field not in self.get_contract_fields().keys():
+                return 'Choose valid field.'
+            excel_header.append(self.get_contract_fields()[field])
+        contract_data = {
+            'excel_header': excel_header,
+            'queryset_fields': fields,
+            'queryset': self.get_queryset()
+        }
+        return contract_data
+
+    def get_rows(self, contract):
+        row = []
+        for field in self.get_filtered_data()['queryset_fields']:
+            match field:
+                case 'category_manager':
+                    row.append(contract.category_manager.first_name)
+                case 'contract_owner':
+                    row.append(contract.contract_owner.first_name)
+                case 'lawyer':
+                    row.append(contract.lawyer.first_name)
+                case 'project_owner':
+                    row.append(contract.project_owner.first_name)
+                case 'creation_date':
+                    row.append(contract.creation_date.strftime('%m/%d/%Y, %H:%M'))
+                case 'effective_date':
+                    row.append(contract.effective_date.strftime('%m/%d/%Y'))
+                case 'expiration_date':
+                    row.append(contract.expiration_date.strftime('%m/%d/%Y'))
+                case 'duration':
+                    row.append(contract.duration)
+                case 'name':
+                    row.append(contract.name)
+                case 'contract_number':
+                    row.append(contract.contract_number)
+                case 'description':
+                    row.append(contract.description)
+                case 'parent_agreement':
+                    row.append(contract.parent_agreement.name)
+                case 'departement':
+                    row.append(contract.departement.name)
+                case 'contract_structure':
+                    row.append(contract.contract_structure)
+                case 'contract_amount':
+                    row.append(contract.contract_amount)
+                case 'category':
+                    row.append(contract.category.name)
+                case 'currency':
+                    row.append(contract.currency.name)
+                case 'create_by':
+                    row.append(contract.create_by.first_name)
+                case 'terms':
+                    row.append(contract.terms)
+                case 'contract_notice':
+                    row.append(contract.contract_notice)
+                case 'amendment':
+                    row.append(contract.amendment)
+                case 'status':
+                    row.append(contract.status)
+                case 'count_changes':
+                    row.append(contract.count_changes)
+                case 'notification':
+                    row.append(contract.notification)
+                case 'supplier':
+                    row.append(contract.supplier.name)
+        return row
 
     def post(self, request):
-        excelfile = BytesIO()
         workbook = Workbook()
-        workbook.remove(workbook.active)
-        worksheet = workbook.create_sheet(title='Sheet', index=1)
-        # workbook.security.workbookPassword = config('PASSWORD', default='12345data')
-        # workbook.security.lockStructure = config('PROTECT', default=True, cast=bool)
-        # workbook.security.revisionsPassword = config('PASSWORD', default='12345data')
-        # worksheet.protection.sheet = config('PROTECT', default=True, cast=bool)
-        # worksheet.protection.formatCells = config('PROTECT', default=False, cast=bool)
-
+        worksheet = workbook.active
         worksheet.sheet_properties.tabColor = '1072BA'
         worksheet.freeze_panes = 'I2'
 
-        coin_queryset = Contract.objects.all()
-        columns = ['Contract number', ]
+        contract_queryset = self.get_filtered_data()['queryset']
+        columns = self.get_filtered_data()['excel_header']
         row_num = 1
-
-        # Assign the titles for each cell of the header
         for col_num, column_title in enumerate(columns, 1):
             cell = worksheet.cell(row=row_num, column=col_num)
             cell.value = column_title
             cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
             cell.font = Font(bold=True)
-        # Iterate through all coins
-        for _, coin in enumerate(coin_queryset, 1):
+        for _, contract in enumerate(contract_queryset, 1):
             row_num += 1
-
-            # Define the data for each cell in the row
-            row = [
-                coin.contract_number,
-            ]
-
-            # Assign the data for each cell of the row
+            row = self.get_rows(contract)
             for col_num, cell_value in enumerate(row, 1):
                 cell = worksheet.cell(row=row_num, column=col_num)
                 cell.value = cell_value
                 cell.protection = Protection(locked=True)
-        workbook.save(excelfile)
-        file = 'latest-coin-list.xlsx', excelfile.getvalue()
-        file1 = excelfile.getvalue()
-        with open(file1[0], "r") as downloaded_file:
-            # self.image.save(os.path.basename(self.source_url), File(downloaded_file), save=False)
-            document = DocumentContact.objects.create(document=File(downloaded_file))
-
-
-        print(file)
+        workbook.save('file.xlsx')
         return Response(
             {
-                'file': document.last().values('document', ),
+                'file': 'f',
             }
         )
+
+
+class ContractImportDataFromExelApi(APIView):
+    permission_classes = (permissions.IsAuthenticated, )
+
+    def get_queryset(self):
+        queryset = Contract.objects.select_related(
+            'parent_agreement', 'departement', 'category', 'currency', 'organization', 'create_by', 'supplier'
+        ).filter(
+            organization_id=self.request.user.organization.id
+        )
+        return queryset
+
+    def get_contract_fields(self):
+        fields = {
+            'category_manager': 'Category manager',
+            'contract_owner': 'Contract owner',
+            'lawyer': 'Lawyer',
+            'project_owner': 'Project owner',
+            'creation_date': 'Creation date',
+            'effective_date': 'Effective date',
+            'expiration_date': 'Expiration date',
+            'duration': 'Duration',
+            'name': 'Name',
+            'contract_number': 'Contract number',
+            'description': 'Description',
+            'parent_agreement': 'Parent agreement',
+            'departement': 'Department',
+            'contract_structure': 'Contract structure',
+            'contract_amount': 'Contract amount',
+            'category': 'Category',
+            'currency': 'Currency',
+            'organization': 'Organization',
+            'create_by': 'Create by',
+            'terms': 'Terms',
+            'contract_notice': 'Contract notice',
+            'amendment': 'Amendment',
+            'status': 'Status',
+            'count_changes': 'Count changes',
+            'notification': 'Notification',
+            'supplier': 'Supplier',
+        }
+        return fields
+
+    def post(self, request):
+        file = request.data.get('file')
+        if not file:
+            return Response('Upload file.')
+        wb_obj = openpyxl.load_workbook(file)
+        sheet_obj = wb_obj.active
+        max_col = sheet_obj.max_column
+        queryset_fields = []
+        key_list = list(self.get_contract_fields().keys())
+        value_list = list(self.get_contract_fields().values())
+        for i in range(1, max_col + 1):
+            cell_obj = sheet_obj.cell(row=1, column=i)
+            if cell_obj.value not in self.get_contract_fields().values():
+                print(f'Rename {cell_obj.value}.')
+            field_name = value_list.index(cell_obj.value)
+            queryset_fields.append(key_list[field_name])
+
+        for i in range(1, max_col + 1):
+            # print(i)
+            cell_obj = sheet_obj.cell(row=2, column=i)
+            print(cell_obj.value, end=" ")
+        return Response(
+            {
+                'data': sheet_obj.max_column
+            }
+        )
+
 
 
 

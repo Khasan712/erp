@@ -48,7 +48,7 @@ class PostListFolderOrDocumentApi(views.APIView):
             serializer = PostFolderOrDocumentSerializer(data=request.data)
             if not serializer.is_valid():
                 return Response(not_serializer_is_valid(serializer.errors))
-            serializer.save(created_id=user.id, organization_id=user.organization.id)
+            serializer.save(creator_id=user.id, organization_id=user.organization.id)
         except Exception as e:
             return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
         else:

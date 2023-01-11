@@ -75,18 +75,14 @@ CHOICES = (
 
 
 class Contract(models.Model):
-    # Users
     category_manager = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name='categoy_manager')
     contract_owner = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name='contract_owner')
     lawyer = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name='lawyer')
     project_owner = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name='project_owner')
-    # contract dates :
     creation_date = models.DateTimeField(auto_now_add=True)
     effective_date = models.DateField(blank =True, null=True)
     expiration_date = models.DateField(blank =True, null=True)
     duration = models.FloatField(null=True, blank=True)
-
-    # Contract Attributes :
     name = models.CharField(max_length=100, blank=True, null=True)
     contract_number = models.CharField(max_length=15, unique=True, blank=True, null=True)
     description = models.CharField(max_length=500, blank=True, null=True)
@@ -98,8 +94,6 @@ class Contract(models.Model):
     currency = models.ForeignKey(Currency, on_delete=models.CASCADE, blank =True, null=True)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, blank =True, null=True)
     create_by = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
-
-    # contract terms
     terms = models.CharField(max_length=50, choices=TERMS, blank=True, null=True)
     contract_notice = models.FloatField(null=True, blank=True)
     amendment = models.BooleanField(default=False, blank=True, null=True)
@@ -107,8 +101,6 @@ class Contract(models.Model):
     count_changes = models.FloatField(default=0)
     notification = models.FloatField(null=True, blank=True)
     is_send_fixed = models.BooleanField(default=False)
-
-    # Supplier information
     supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, blank =True, null=True)
     serviceCommodityConsultant = models.CharField(max_length=10, choices=ServiceChoice.choices(), blank=True, null=True)
 
@@ -232,8 +224,8 @@ class DocumentContact(models.Model):
     document = models.FileField(blank=True, null=True, upload_to='contracts/files/')
     is_signing = models.BooleanField(default=False)
 
-    def __str__(self):
-        return self.document
+    # def __str__(self):
+    #     return self.document
 
 
 
