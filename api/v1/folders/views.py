@@ -6,7 +6,7 @@ from django.db.models import Q
 from rest_framework.response import Response
 from .serializers import (
     PostFolderOrDocumentSerializer, ListFolderOrDocumentSerializer, PatchFolderOrDocumentSerializer,
-    PatchAdministratorFolderOrDocumentSerializer, TrashedFolderOrDocumentSerializer,
+    PatchAdministratorFolderOrDocumentSerializer, TrashedFolderOrDocumentSerializer, GedFolderOrDocumentSerializer,
 )
 from .models import (
     FolderOrDocument,
@@ -90,17 +90,17 @@ class PatchDeleteFolderOrDocumentApi(views.APIView):
         else:
             return Response(serializer_valid_response(serializer), status=status.HTTP_200_OK)
 
+    def get(self, request, id):
+        try:
+            serializer = GedFolderOrDocumentSerializer(self.get_object(id), data=self.request.data, partial=True)
+            if not serializer.is_valid():
+                return Response(not_serializer_is_valid(serializer.errors), status=status.HTTP_400_BAD_REQUEST)
+            serializer.save()
+        except Exception as e:
+            return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(serializer_valid_response(serializer), status=status.HTTP_200_OK)
 
-    # def get(self, request, id):
-    #     try:
-    #         serializer = PatchFolderOrDocumentSerializer(self.get_object(id), data=self.request.data, partial=True)
-    #         if not serializer.is_valid:
-    #             return Response(not_serializer_is_valid(serializer.errors), status=status.HTTP_400_BAD_REQUEST)
-    #         serializer.save()
-    #     except Exception as e:
-    #         return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
-    #     else:
-    #         return Response(serializer_valid_response(serializer), status=status.HTTP_200_OK)
 
 class MoveToTrashDocumentFolderApi(views.APIView):
     permission_classes = (permissions.IsAuthenticated,)

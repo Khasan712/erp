@@ -57,3 +57,8 @@ class TrashedFolderOrDocumentSerializer(serializers.ModelSerializer):
             }
         return response
 
+
+class GedFolderOrDocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FolderOrDocument
+        fields = ('id', 'name', 'document')
