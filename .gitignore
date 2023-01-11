@@ -97,7 +97,7 @@ ipython_config.py
 __pypackages__/
 
 # Celery stuff
-ERP_MASTER/celerybeat-schedule
+celerybeat-schedule
 celerybeat.pid
 
 # SageMath parsed files
