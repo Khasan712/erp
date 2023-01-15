@@ -10,6 +10,7 @@ class FolderOrDocument(models.Model):
     document = models.FileField(upload_to='Folders/Documents/', blank=True, null=True)
     is_folder = models.BooleanField(default=True)
     is_trashed = models.BooleanField(default=False)
+    is_uploaded = models.BooleanField(default=False)
     created_at = models.DateField(auto_now_add=True)
     updated_at = models.DateField(blank=True, null=True, editable=False)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True)
