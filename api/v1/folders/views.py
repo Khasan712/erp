@@ -147,7 +147,7 @@ class ListUsersDocumentFolderAPI(views.APIView):
         user = self.request.user
         selected_user = params.get('user')
         if not selected_user:
-            raise ValidationError('Select role')
+            raise ValidationError('Select user')
         queryset = self.get_queryset().filter(
             is_trashed=False, organization_id=user.organization.id, creator_id=selected_user
         )

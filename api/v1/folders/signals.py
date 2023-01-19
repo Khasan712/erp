@@ -5,12 +5,19 @@ from .models import (
     GiveAccessToDocumentFolder
 )
 from datetime import datetime
+import uuid
 
 
 def save_updated_time(instance):
     instance.updated_at = datetime.now()
     instance.save()
 
+
+@receiver(post_save, sender=GiveAccessToDocumentFolder)
+def folder_post_save_signal(sender, instance, created, **kwargs):
+    if created:
+        instance.access_code = uuid.uuid4()
+        instance.save()
 
 # @receiver(post_save, sender=Folder)
 # def folder_post_save_signal(sender, instance, created, **kwargs):

@@ -1,6 +1,7 @@
 from django.db import models
 from api.v1.users.models import User
 from api.v1.organization.models import Organization
+from django.core.exceptions import ValidationError
 
 
 class FolderOrDocument(models.Model):
@@ -20,8 +21,12 @@ class FolderOrDocument(models.Model):
 
 
 class GiveAccessToDocumentFolder(models.Model):
-    folder_or_document = models.ForeignKey(FolderOrDocument, on_delete=models.CASCADE, blank=True, null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
+    folder_or_document = models.ForeignKey(FolderOrDocument, on_delete=models.CASCADE)
+    out_side_person = models.EmailField(max_length=250, blank=True, null=True)
+    access_code = models.CharField(max_length=100, blank=True, null=True)
     editable = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
     expiration_date = models.DateField()
     created_at = models.DateField(auto_now_add=True)
     updated_at = models.DateField(blank=True, null=True, editable=False)
@@ -29,12 +34,24 @@ class GiveAccessToDocumentFolder(models.Model):
     def __str__(self):
         return f'{self.folder_or_document}: {self.editable}'
 
+    def clean(self):
+        if not self.user and not self.out_side_person or self.user and self.out_side_person:
+            raise ValidationError(
+                {
+                    'error': 'Select user or enter email.'
+                }
+            )
+        if self.user and self.out_side_person:
+            raise ValidationError(
+                {
+                    'error': 'Select user or enter email.'
+                }
+            )
 
-class GiveAccessToDocumentFolderUser(models.Model):
-    give_access = models.ForeignKey(GiveAccessToDocumentFolder, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
 
-    def __str__(self):
-        return f'{self.user.first_name}: {self.give_access}'
+
 
 
