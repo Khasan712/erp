@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from .serializers import (
     PostFolderOrDocumentSerializer, ListFolderOrDocumentSerializer, PatchFolderOrDocumentSerializer,
     PatchAdministratorFolderOrDocumentSerializer, TrashedFolderOrDocumentSerializer, GedFolderOrDocumentSerializer,
-    GiveAccessToDocumentFolderSerializer,
+    GiveAccessToDocumentFolderSerializer, ListGiveAccessToDocumentFolderSerializer,
 )
 from api.v1.users.models import User
 from .models import (
@@ -273,7 +273,9 @@ class GiveAccessToDocumentFolderApi(views.APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get_queryset(self):
-        queryset = GiveAccessToDocumentFolder.objects.select_related('user', 'folder_or_document', '')
+        queryset = GiveAccessToDocumentFolder.objects.select_related(
+            'organization', 'creator', 'user', 'folder_or_document'
+        ).filter(organization_id=self.request.user.organization.id)
         return queryset
 
     def isValid(self, email):
@@ -287,31 +289,45 @@ class GiveAccessToDocumentFolderApi(views.APIView):
             self, creator, users: list, folders_or_documents: list, editable: bool, expiration_date: str,
     ):
         with transaction.atomic():
+            documents_and_folders = FolderOrDocument.objects.select_related('organization', 'creator', 'parent')
             for folder_or_document in folders_or_documents:
-                folder_document = self.get_queryset().filter(id=folder_or_document).first()
-                if folder_document:
+                folder_document = documents_and_folders.filter(id=folder_or_document).first()
+                if not folder_document:
+                    return f'{folder_or_document} is not valid document or folder.'
+                with transaction.atomic():
                     for user in users:
                         if isinstance(user, int):
+                            user_obj = User.objects.filter(id=user).first()
+                            if not user_obj:
+                                return f'{user} is not valid user id.'
                             data = {
                                 'user': user,
                                 'folder_or_document': folder_or_document,
                                 'editable': editable,
                                 'expiration_date': expiration_date,
                             }
-
+                            serializer = GiveAccessToDocumentFolderSerializer(data=data)
+                            if not serializer.is_valid():
+                                return make_errors(serializer.errors)
+                            serializer.save(creator_id=creator.id, organization_id=creator.organization.id)
                         if isinstance(user, str):
                             out_side_person = self.isValid(user)
-                            if out_side_person:
-                                data = {
-                                    'out_side_person': user,
-                                    'folder_or_document': folder_or_document,
-                                    'editable': editable,
-                                    'expiration_date': expiration_date,
-                                }
-                        serializer = GiveAccessToDocumentFolderSerializer(data=data)
-                        if not serializer.is_valid():
-                            return not_serializer_is_valid(serializer)
-                        serializer.save(creator_id=creator.id, organization_id=creator.organization.id)
+                            if not out_side_person:
+                                return f"{user} is not valid email"
+                            data = {
+                                'out_side_person': user,
+                                'folder_or_document': folder_or_document,
+                                'editable': editable,
+                                'expiration_date': expiration_date,
+                            }
+                            serializer = GiveAccessToDocumentFolderSerializer(data=data)
+                            if not serializer.is_valid():
+                                return make_errors(serializer.errors)
+                            serializer.save(creator_id=creator.id, organization_id=creator.organization.id)
+                        # else:
+                        #     return f'user {user} is not valid type. id - int or email - str.'
+
+        return True
 
     def post(self, request):
         try:
@@ -319,11 +335,38 @@ class GiveAccessToDocumentFolderApi(views.APIView):
             data = self.request.data
             access_users = data.get('users')
             folders_or_documents = data.get('folder_or_document')
+            editable = data.get('editable')
             expiration_date = data.get('expiration_date')
+            give_access = self.give_access_for_user(
+                creator, access_users, folders_or_documents, editable, expiration_date
+            )
+            if give_access != True:
+                return Response(
+                    {
+                        'success': False,
+                        'message': 'Error occurred.',
+                        'error': give_access,
+                        'data': []
+                    }
+                )
             if access_users and folders_or_documents:
                 pass
         except Exception as e:
             return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response()
+            return Response(
+                {
+                    'success': True,
+                    'message': 'Data created successfully.',
+                    'error': [],
+                    'data': []
+                }, status=status.HTTP_201_CREATED
+            )
 
+    def get(self, request):
+        try:
+            serializer = ListGiveAccessToDocumentFolderSerializer(self.get_queryset(), many=True)
+        except Exception as e:
+            return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(serializer_valid_response(serializer))
