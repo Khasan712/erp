@@ -61,3 +61,10 @@ class GedFolderOrDocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = FolderOrDocument
         fields = ('id', 'name', 'document')
+
+
+class GiveAccessToDocumentFolderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GiveAccessToDocumentFolder
+        fields = ('id', 'user', 'folder_or_document', 'out_side_person', 'editable', 'expiration_date')
+

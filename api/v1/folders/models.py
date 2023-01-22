@@ -21,6 +21,8 @@ class FolderOrDocument(models.Model):
 
 
 class GiveAccessToDocumentFolder(models.Model):
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
+    creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='access_creator')
     user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
     folder_or_document = models.ForeignKey(FolderOrDocument, on_delete=models.CASCADE)
     out_side_person = models.EmailField(max_length=250, blank=True, null=True)
@@ -35,13 +37,7 @@ class GiveAccessToDocumentFolder(models.Model):
         return f'{self.folder_or_document}: {self.editable}'
 
     def clean(self):
-        if not self.user and not self.out_side_person or self.user and self.out_side_person:
-            raise ValidationError(
-                {
-                    'error': 'Select user or enter email.'
-                }
-            )
-        if self.user and self.out_side_person:
+        if (not self.user and not self.out_side_person) or (self.user and self.out_side_person):
             raise ValidationError(
                 {
                     'error': 'Select user or enter email.'

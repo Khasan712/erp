@@ -1,5 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.db import transaction
+import re
 from django.shortcuts import render
 from rest_framework import generics, views, status, permissions
 from django.db.models import Q
@@ -7,9 +8,11 @@ from rest_framework.response import Response
 from .serializers import (
     PostFolderOrDocumentSerializer, ListFolderOrDocumentSerializer, PatchFolderOrDocumentSerializer,
     PatchAdministratorFolderOrDocumentSerializer, TrashedFolderOrDocumentSerializer, GedFolderOrDocumentSerializer,
+    GiveAccessToDocumentFolderSerializer,
 )
+from api.v1.users.models import User
 from .models import (
-    FolderOrDocument,
+    FolderOrDocument, GiveAccessToDocumentFolder,
 )
 from ..commons.pagination import make_pagination
 from ..commons.views import (
@@ -265,4 +268,62 @@ class TrashedDocumentFolderApi(views.APIView):
         else:
             return Response(make_pagination(request, serializer, filtered_queryset), status=status.HTTP_200_OK)
 
+
+class GiveAccessToDocumentFolderApi(views.APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_queryset(self):
+        queryset = GiveAccessToDocumentFolder.objects.select_related('user', 'folder_or_document', '')
+        return queryset
+
+    def isValid(self, email):
+        regex = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
+        if re.fullmatch(regex, email):
+            return True
+        else:
+            return False
+
+    def give_access_for_user(
+            self, creator, users: list, folders_or_documents: list, editable: bool, expiration_date: str,
+    ):
+        with transaction.atomic():
+            for folder_or_document in folders_or_documents:
+                folder_document = self.get_queryset().filter(id=folder_or_document).first()
+                if folder_document:
+                    for user in users:
+                        if isinstance(user, int):
+                            data = {
+                                'user': user,
+                                'folder_or_document': folder_or_document,
+                                'editable': editable,
+                                'expiration_date': expiration_date,
+                            }
+
+                        if isinstance(user, str):
+                            out_side_person = self.isValid(user)
+                            if out_side_person:
+                                data = {
+                                    'out_side_person': user,
+                                    'folder_or_document': folder_or_document,
+                                    'editable': editable,
+                                    'expiration_date': expiration_date,
+                                }
+                        serializer = GiveAccessToDocumentFolderSerializer(data=data)
+                        if not serializer.is_valid():
+                            return not_serializer_is_valid(serializer)
+                        serializer.save(creator_id=creator.id, organization_id=creator.organization.id)
+
+    def post(self, request):
+        try:
+            creator = self.request.user
+            data = self.request.data
+            access_users = data.get('users')
+            folders_or_documents = data.get('folder_or_document')
+            expiration_date = data.get('expiration_date')
+            if access_users and folders_or_documents:
+                pass
+        except Exception as e:
+            return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response()
 
