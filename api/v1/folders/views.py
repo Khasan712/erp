@@ -86,7 +86,7 @@ class PatchDeleteFolderOrDocumentApi(views.APIView):
     def patch(self, request, id):
         try:
             serializer = PatchFolderOrDocumentSerializer(self.get_object(id), data=self.request.data, partial=True)
-            if not serializer.is_valid:
+            if not serializer.is_valid():
                 return Response(not_serializer_is_valid(serializer.errors), status=status.HTTP_400_BAD_REQUEST)
             serializer.save()
         except Exception as e:
@@ -387,11 +387,11 @@ class GiveAccessToDocumentFolderApi(views.APIView):
 
     def get(self, request):
         try:
-            serializer = ListGiveAccessToDocumentFolderSerializer(self.get_queryset(), many=True)
+            serializer = ListGiveAccessToDocumentFolderSerializer
         except Exception as e:
             return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response(serializer_valid_response(serializer))
+            return Response(make_pagination(request, serializer, self.get_queryset()))
 
     def patch(self, request):
         try:

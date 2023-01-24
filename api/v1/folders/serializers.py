@@ -83,14 +83,14 @@ class ListGiveAccessToDocumentFolderSerializer(serializers.ModelSerializer):
                 'last_name': instance.user.last_name,
                 'email': instance.user.email,
             }
-        if instance.folder_or_document.document:
-            response['folder_or_document'] = {
-                'id': instance.folder_or_document.id,
-                'document': instance.folder_or_document.document,
-            }
-        else:
+        if instance.folder_or_document.document is None:
             response['folder_or_document'] = {
                 'id': instance.folder_or_document.id,
                 'name': instance.folder_or_document.name,
+            }
+        if instance.folder_or_document.document is not None:
+            response['folder_or_document'] = {
+                'id': instance.folder_or_document.id,
+                'document': instance.folder_or_document.document,
             }
         return response
