@@ -9,6 +9,7 @@ from .serializers import (
     PostFolderOrDocumentSerializer, ListFolderOrDocumentSerializer, PatchFolderOrDocumentSerializer,
     PatchAdministratorFolderOrDocumentSerializer, TrashedFolderOrDocumentSerializer, GedFolderOrDocumentSerializer,
     GiveAccessToDocumentFolderSerializer, ListGiveAccessToDocumentFolderSerializer,
+    UpdateGiveAccessToDocumentFolderSerializer,
 )
 from api.v1.users.models import User
 from .models import (
@@ -283,23 +284,24 @@ class GiveAccessToDocumentFolderApi(views.APIView):
     def get_object(self):
         user = self.request.user
         params = self.request.query_params
-        access_user = params.get('access_user')
-        folder_or_document = params.get('folder_or_document')
-        if isinstance(access_user, int):
-            obj = self.get_queryset().filter(
-                creator_id=user.id, user_id=access_user, folder_or_document=folder_or_document
-            ).first()
-            if not obj:
-                return None
-            return obj
-        if isinstance(access_user, str):
-            obj = self.get_queryset().filter(
-                creator_id=user.id, out_side_person=access_user, folder_or_document=folder_or_document
-            ).first()
-            if not obj:
-                return None
-            return obj
-        return None
+        invite = params.get('invite')
+        try:
+            invite = int(invite)
+        except ValueError:
+            return 'Send invite=`ID` in the params.'
+        return self.get_queryset().filter(id=invite, creator_id=user.id).first()
+
+    def get_filtered_queryset(self):
+        user = self.request.user
+        params = self.request.query_params
+        invited_user = params.get('user')
+        if invited_user:
+            try:
+                invited_user = int(invited_user)
+            except ValueError:
+                return 'Send only user id.'
+            return self.get_queryset().filter(creator_id=user.id, user_id=invited_user)
+        return 'Send user=`ID` in the params.'
 
     def isValid(self, email):
         regex = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
@@ -388,18 +390,23 @@ class GiveAccessToDocumentFolderApi(views.APIView):
 
     def get(self, request):
         try:
+            invited_user = self.get_filtered_queryset()
+            if isinstance(invited_user, str):
+                return Response(get_error_response(invited_user))
             serializer = ListGiveAccessToDocumentFolderSerializer
         except Exception as e:
             return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response(make_pagination(request, serializer, self.get_queryset()))
+            return Response(make_pagination(request, serializer, invited_user))
 
     def patch(self, request):
         try:
             obj = self.get_object()
             if not obj:
                 return Response(object_not_found_response(), status=status.HTTP_400_BAD_REQUEST)
-            serializer = GiveAccessToDocumentFolderSerializer(obj, data=self.request.data, partial=True)
+            if isinstance(obj, str):
+                return Response(get_error_response(obj), status=status.HTTP_400_BAD_REQUEST)
+            serializer = UpdateGiveAccessToDocumentFolderSerializer(obj, data=self.request.data, partial=True)
             if not serializer.is_valid():
                 return Response(not_serializer_is_valid(serializer), status=status.HTTP_400_BAD_REQUEST)
             serializer.save()
@@ -413,6 +420,8 @@ class GiveAccessToDocumentFolderApi(views.APIView):
             obj = self.get_object()
             if not obj:
                 return Response(object_not_found_response(), status=status.HTTP_400_BAD_REQUEST)
+            if isinstance(obj, str):
+                return Response(get_error_response(obj), status=status.HTTP_400_BAD_REQUEST)
             obj.delete()
         except Exception as e:
             return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
@@ -428,6 +437,19 @@ class OutsideInvitesApi(views.APIView):
             'organization', 'creator', 'user', 'folder_or_document'
         ).filter(organization_id=self.request.user.organization.id)
         return queryset
+
+    def get_filtered_queryset(self):
+        user = self.request.user
+        params = self.request.query_params
+        invited_user = params.get('user')
+        if invited_user:
+            try:
+                invited_user = int(invited_user)
+            except ValueError:
+                return 'Send only user id.'
+            return self.get_queryset().filter(creator_id=user.id, user_id=invited_user)
+        return 'Send user=`ID` in the params.'
+
 
     def get(self, request):
         try:

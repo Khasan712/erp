@@ -69,6 +69,12 @@ class GiveAccessToDocumentFolderSerializer(serializers.ModelSerializer):
         fields = ('id', 'user', 'folder_or_document', 'out_side_person', 'editable', 'expiration_date')
 
 
+class UpdateGiveAccessToDocumentFolderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GiveAccessToDocumentFolder
+        fields = ('id', 'editable', 'expiration_date')
+
+
 class ListGiveAccessToDocumentFolderSerializer(serializers.ModelSerializer):
     class Meta:
         model = GiveAccessToDocumentFolder
