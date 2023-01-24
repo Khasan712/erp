@@ -17,6 +17,7 @@ from .models import (
 from ..commons.pagination import make_pagination
 from ..commons.views import (
     exception_response, not_serializer_is_valid, serializer_valid_response, object_deleted_response,
+    serializer_update_valid_response, object_not_found_response,
 )
 from ..users.permissions import IsSourcingDirector, IsContractAdministrator
 from ..users.services import make_errors
@@ -278,6 +279,27 @@ class GiveAccessToDocumentFolderApi(views.APIView):
         ).filter(organization_id=self.request.user.organization.id)
         return queryset
 
+    def get_object(self):
+        user = self.request.user
+        params = self.request.query_params
+        access_user = params.get('access_user')
+        folder_or_document = params.get('folder_or_document')
+        if isinstance(access_user, int):
+            obj = self.get_queryset().filter(
+                creator_id=user.id, user_id=access_user, folder_or_document=folder_or_document
+            ).first()
+            if not obj:
+                return None
+            return obj
+        if isinstance(access_user, str):
+            obj = self.get_queryset().filter(
+                creator_id=user.id, out_side_person=access_user, folder_or_document=folder_or_document
+            ).first()
+            if not obj:
+                return None
+            return obj
+        return None
+
     def isValid(self, email):
         regex = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
         if re.fullmatch(regex, email):
@@ -370,3 +392,28 @@ class GiveAccessToDocumentFolderApi(views.APIView):
             return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response(serializer_valid_response(serializer))
+
+    def patch(self, request):
+        try:
+            obj = self.get_object()
+            if not obj:
+                return Response(object_not_found_response(), status=status.HTTP_400_BAD_REQUEST)
+            serializer = GiveAccessToDocumentFolderSerializer(obj, data=self.request.data, partial=True)
+            if not serializer.is_valid():
+                return Response(not_serializer_is_valid(serializer), status=status.HTTP_400_BAD_REQUEST)
+            serializer.save()
+        except Exception as e:
+            return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(serializer_update_valid_response(serializer), status=status.HTTP_200_OK)
+
+    def delete(self, request):
+        try:
+            obj = self.get_object()
+            if not obj:
+                return Response(object_not_found_response(), status=status.HTTP_400_BAD_REQUEST)
+            obj.delete()
+        except Exception as e:
+            return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(object_deleted_response(), status=status.HTTP_204_NO_CONTENT)
