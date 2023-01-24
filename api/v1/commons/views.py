@@ -25,6 +25,15 @@ def not_serializer_is_valid(serializer):
     }
 
 
+def get_error_response(error):
+    return {
+        "success": False,
+        "message": 'Error occurred.',
+        "error": error,
+        "data": [],
+    }
+
+
 def serializer_valid_response(serializer):
     return {
         "success": True,

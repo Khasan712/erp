@@ -2,9 +2,9 @@ from django.contrib.auth.models import AnonymousUser
 from rest_framework.permissions import SAFE_METHODS, BasePermission
 
 
-
 class IsAdmin(BasePermission):
-    message = "You must be the admin of this web site"
+    message = "You must be the admin of this website"
+
     def has_permission(self, request, view):
         if not isinstance(request.user, AnonymousUser):
             # if request.method in SAFE_METHODS:
@@ -12,7 +12,8 @@ class IsAdmin(BasePermission):
         
 
 class IsContractAdministrator(BasePermission):
-    message = "You must be the contract administrator of this web site"
+    message = "You must be the contract administrator of this website"
+
     def has_permission(self, request, view):
         if not isinstance(request.user, AnonymousUser):
             # if request.method in SAFE_METHODS:
@@ -20,14 +21,16 @@ class IsContractAdministrator(BasePermission):
         
 
 class IsCategoryManager(BasePermission):
-    message = "You must be the category manager of this web site"
+    message = "You must be the category manager of this website"
+
     def has_permission(self, request, view):
         if not isinstance(request.user, AnonymousUser):
             # if request.method in SAFE_METHODS:
             return request.user.role == "category_manager"
 
+
 class IsLawyer(BasePermission):
-    message = "You must be the lawyer of this web site"
+    message = "You must be the lawyer of this website"
 
     def has_permission(self, request, view):
         if not isinstance(request.user, AnonymousUser):
@@ -36,7 +39,7 @@ class IsLawyer(BasePermission):
         
 
 class IsSourcingAdministrator(BasePermission):
-    message = "You must be the sourcing administrator of this web site"
+    message = "You must be the sourcing administrator of this website"
 
     def has_permission(self, request, view):
         if not isinstance(request.user, AnonymousUser):
@@ -45,7 +48,7 @@ class IsSourcingAdministrator(BasePermission):
 
 
 class IsSupplier(BasePermission):
-    message = "You must be the supplier of this web site"
+    message = "You must be the supplier of this website"
 
     def has_permission(self, request, view):
         if not isinstance(request.user, AnonymousUser):
@@ -57,7 +60,7 @@ class IsSourcingDirector(BasePermission):
     """
         Organization director
     """
-    message = "You must be the sourcing director of this web site"
+    message = "You must be the sourcing director of this website"
 
     def has_permission(self, request, view):
         if not isinstance(request.user, AnonymousUser):
@@ -66,7 +69,7 @@ class IsSourcingDirector(BasePermission):
 
 
 # class IsBuyer(BasePermission):
-#     message = "You must be the buyer of this web site"
+#     message = "You must be the buyer of this website"
 
 #     def has_permission(self, request, view):
 #         if not isinstance(request.user, AnonymousUser):
@@ -75,7 +78,7 @@ class IsSourcingDirector(BasePermission):
         
         
 # class IsStorekeeper(BasePermission):
-#     message = "You must be the storekeeper of this web site"
+#     message = "You must be the storekeeper of this website"
 
 #     def has_permission(self, request, view):
 #         if not isinstance(request.user, AnonymousUser):

@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (
     PostListFolderOrDocumentApi, ListUsersDocumentFolderAPI, PatchDeleteFolderOrDocumentApi,
     MoveToTrashDocumentFolderApi, RemoveTrashOrDeleteFolderOrDocumentApi, TrashedDocumentFolderApi,
-    GiveAccessToDocumentFolderApi
+    GiveAccessToDocumentFolderApi, OutsideInvitesApi, FolderDocumentUsersApi
 )
 
 
@@ -14,4 +14,6 @@ urlpatterns = [
     path('users/', ListUsersDocumentFolderAPI.as_view()),
     path('detail/<int:id>/', PatchDeleteFolderOrDocumentApi.as_view()),
     path('give-access/', GiveAccessToDocumentFolderApi.as_view()),
+    path('outside-invites/', OutsideInvitesApi.as_view()),
+    path('get-users/', FolderDocumentUsersApi.as_view()),
 ]

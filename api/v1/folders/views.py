@@ -17,9 +17,10 @@ from .models import (
 from ..commons.pagination import make_pagination
 from ..commons.views import (
     exception_response, not_serializer_is_valid, serializer_valid_response, object_deleted_response,
-    serializer_update_valid_response, object_not_found_response,
+    serializer_update_valid_response, object_not_found_response, get_error_response,
 )
 from ..users.permissions import IsSourcingDirector, IsContractAdministrator
+from ..users.serializers import UserUpdateSerializer, FolderDocumentUsersSerializer
 from ..users.services import make_errors
 
 
@@ -417,3 +418,59 @@ class GiveAccessToDocumentFolderApi(views.APIView):
             return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response(object_deleted_response(), status=status.HTTP_204_NO_CONTENT)
+
+
+class OutsideInvitesApi(views.APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_queryset(self):
+        queryset = GiveAccessToDocumentFolder.objects.select_related(
+            'organization', 'creator', 'user', 'folder_or_document'
+        ).filter(organization_id=self.request.user.organization.id)
+        return queryset
+
+    def get(self, request):
+        try:
+            serializer = None
+        except Exception as e:
+            return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
+        return Response(make_pagination(request, serializer, self.get_queryset()))
+
+
+class FolderDocumentUsersApi(views.APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_queryset(self):
+        queryset = User.objects.select_related('organization').filter(organization_id=self.request.user.organization.id)
+        return queryset
+
+    def get_users(self):
+        user = self.request.user
+        params = self.request.query_params
+        users = params.get('users')
+        if users:
+            match users:
+                case 'general':
+                    if user.role != 'sourcing_director':
+                        return "You must be the sourcing director of this website"
+                    return self.get_queryset().filter(folder_creator__isnull=False).distinct()
+                case 'my_invites':
+                    return self.get_queryset().filter(access_user__creator_id=user.id).distinct()
+                case 'outside_invites':
+                    return self.get_queryset().filter(
+                        access_creator__user_id=user.id, access_creator__isnull=False
+                    ).distinct()
+        else:
+            return 'send users=general `or` my_invites `or` outside_invites, in the params.'
+
+    def get(self, request):
+        try:
+            users = self.get_users()
+            if isinstance(users, str):
+                return Response(get_error_response(users), status=status.HTTP_400_BAD_REQUEST)
+            serializer = FolderDocumentUsersSerializer
+        except Exception as e:
+            return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(make_pagination(request, serializer, users))
+

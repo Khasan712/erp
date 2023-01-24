@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 
 class FolderOrDocument(models.Model):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
-    creator = models.ForeignKey(User, on_delete=models.CASCADE)
+    creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='folder_creator')
     name = models.CharField(max_length=255, blank=True, null=True)
     document = models.FileField(upload_to='Folders/Documents/', blank=True, null=True)
     is_folder = models.BooleanField(default=True)
@@ -23,7 +23,7 @@ class FolderOrDocument(models.Model):
 class GiveAccessToDocumentFolder(models.Model):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='access_creator')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True, related_name='access_user')
     folder_or_document = models.ForeignKey(FolderOrDocument, on_delete=models.CASCADE)
     out_side_person = models.EmailField(max_length=250, blank=True, null=True)
     access_code = models.CharField(max_length=100, blank=True, null=True)

@@ -12,7 +12,9 @@ class FolderOrDocumentAdmin(admin.ModelAdmin):
 
 @admin.register(GiveAccessToDocumentFolder)
 class GiveAccessToDocumentFolderAdmin(admin.ModelAdmin):
-    list_display = ('id', 'folder_or_document', 'editable', 'expiration_date', 'created_at', 'updated_at')
+    list_display = (
+        'id', 'creator', 'user', 'folder_or_document', 'editable', 'expiration_date', 'created_at', 'updated_at'
+    )
 
 
 

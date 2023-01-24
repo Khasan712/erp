@@ -89,9 +89,11 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
 class LogoutSerializer(serializers.Serializer):
     refresh = serializers.CharField()
+
     def validate(self, attrs):
         self.token = attrs['refresh']
         return attrs
+
     def save(self, **kwargs):
         try:
             RefreshToken(self.token).blacklist()
@@ -99,12 +101,14 @@ class LogoutSerializer(serializers.Serializer):
             self.fail('bad_token')
 
 
-
-
-
-
-
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         exclude = ('password', 'is_active', 'is_admin', 'is_superuser', 'is_staff')
+
+
+class FolderDocumentUsersSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('id', 'first_name', 'last_name', 'email', 'role')
+
