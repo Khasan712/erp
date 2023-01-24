@@ -441,22 +441,24 @@ class OutsideInvitesApi(views.APIView):
     def get_filtered_queryset(self):
         user = self.request.user
         params = self.request.query_params
-        invited_user = params.get('user')
-        if invited_user:
+        outside_user_invited = params.get('user')
+        if outside_user_invited:
             try:
-                invited_user = int(invited_user)
+                outside_user_invited = int(outside_user_invited)
             except ValueError:
                 return 'Send only user id.'
-            return self.get_queryset().filter(creator_id=user.id, user_id=invited_user)
+            return self.get_queryset().filter(creator_id=outside_user_invited, user_id=user.id)
         return 'Send user=`ID` in the params.'
-
 
     def get(self, request):
         try:
-            serializer = None
+            outside_invites = self.get_filtered_queryset()
+            if isinstance(outside_invites, str):
+                return Response(get_error_response(outside_invites))
+            serializer = ListGiveAccessToDocumentFolderSerializer
         except Exception as e:
             return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
-        return Response(make_pagination(request, serializer, self.get_queryset()))
+        return Response(make_pagination(request, serializer, outside_invites))
 
 
 class FolderDocumentUsersApi(views.APIView):
