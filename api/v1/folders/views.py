@@ -1,3 +1,5 @@
+from itertools import chain
+
 from django.core.exceptions import ValidationError
 from django.db import transaction
 import re
@@ -9,7 +11,7 @@ from .serializers import (
     PostFolderOrDocumentSerializer, ListFolderOrDocumentSerializer, PatchFolderOrDocumentSerializer,
     PatchAdministratorFolderOrDocumentSerializer, TrashedFolderOrDocumentSerializer, GedFolderOrDocumentSerializer,
     GiveAccessToDocumentFolderSerializer, ListGiveAccessToDocumentFolderSerializer,
-    UpdateGiveAccessToDocumentFolderSerializer,
+    UpdateGiveAccessToDocumentFolderSerializer, UsersGiveAccessToDocumentFolderSerializer,
 )
 from api.v1.users.models import User
 from .models import (
@@ -464,6 +466,36 @@ class OutsideInvitesApi(views.APIView):
 class FolderDocumentUsersApi(views.APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
+    def remove_duplicated_user(self, queryset):
+        data = []
+        single_item = []
+        with transaction.atomic():
+            for q in queryset:
+                if q.user.id not in single_item:
+                    single_item.append(q.user.id)
+                    data.append(q)
+        return data
+
+    def remove_duplicated_out_side_person(self, queryset):
+        data = []
+        single_item = []
+        with transaction.atomic():
+            for q in queryset:
+                if q.out_side_person not in single_item:
+                    single_item.append(q.out_side_person)
+                    data.append(q)
+        return data
+
+    def sort_listed_queryset(self, queryset_list):
+        print(type(queryset_list[0]))
+        print(queryset_list[0].order_by('-id'))
+        sorted_queryset = []
+        for i in range(queryset_list.values_list('id')):
+            print(i)
+            for x in range(i, queryset_list.values_list('id')):
+                if i > x:
+                    pass
+
     def get_queryset(self):
         queryset = User.objects.select_related('organization').filter(organization_id=self.request.user.organization.id)
         return queryset
@@ -477,24 +509,42 @@ class FolderDocumentUsersApi(views.APIView):
                 case 'general':
                     if user.role != 'sourcing_director':
                         return "You must be the sourcing director of this website"
-                    return self.get_queryset().filter(folder_creator__isnull=False).distinct()
+                    return {
+                        'queryset': self.get_queryset().filter(folder_creator__isnull=False).distinct(),
+                        'serializer': FolderDocumentUsersSerializer
+                    }
                 case 'my_invites':
-                    return self.get_queryset().filter(access_user__creator_id=user.id).distinct()
+                    queryset_invites = GiveAccessToDocumentFolder.objects.select_related(
+                        'organization', 'creator', 'user', 'folder_or_document',
+                    ).filter(creator_id=user.id)
+
+                    invites_in = self.remove_duplicated_user(queryset_invites.filter(user__isnull=False))
+                    invites_out = self.remove_duplicated_out_side_person(queryset_invites.filter(user__isnull=True,))
+                    my_invites = list(chain(invites_in, invites_out))
+                    return {
+                        'queryset': my_invites,
+                        'serializer': UsersGiveAccessToDocumentFolderSerializer
+                    }
                 case 'outside_invites':
-                    return self.get_queryset().filter(
+                    queryset = self.get_queryset().filter(
                         access_creator__user_id=user.id, access_creator__isnull=False
                     ).distinct()
+                    return {
+                        'queryset': queryset,
+                        'serializer': FolderDocumentUsersSerializer
+                    }
         else:
             return 'send users=general `or` my_invites `or` outside_invites, in the params.'
 
     def get(self, request):
         try:
-            users = self.get_users()
-            if isinstance(users, str):
-                return Response(get_error_response(users), status=status.HTTP_400_BAD_REQUEST)
-            serializer = FolderDocumentUsersSerializer
+            data = self.get_users()
+            if isinstance(data, str):
+                return Response(get_error_response(data), status=status.HTTP_400_BAD_REQUEST)
+            queryset = data.get('queryset')
+            serializer = data.get('serializer')
         except Exception as e:
             return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response(make_pagination(request, serializer, users))
+            return Response(make_pagination(request, serializer, queryset))
 

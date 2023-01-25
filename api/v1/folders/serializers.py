@@ -100,3 +100,27 @@ class ListGiveAccessToDocumentFolderSerializer(serializers.ModelSerializer):
                 'document': f'/media/{instance.folder_or_document.document.name}',
             }
         return response
+
+
+class UsersGiveAccessToDocumentFolderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GiveAccessToDocumentFolder
+        fields = ('id', 'user')
+
+    def to_representation(self, instance):
+        res = super().to_representation(instance)
+        if res.get('user'):
+            res['user'] = {
+                'first_name': instance.user.first_name,
+                'last_name': instance.user.last_name,
+                'email': instance.user.email,
+                'role': instance.user.role,
+            }
+        else:
+            res['user'] = {
+                'first_name': None,
+                'last_name': None,
+                'email': instance.out_side_person,
+                'role': None,
+            }
+        return res
