@@ -17,6 +17,7 @@ from api.v1.users.models import User
 from .models import (
     FolderOrDocument, GiveAccessToDocumentFolder,
 )
+from ..chat.tasks import folder_or_document_access_notification
 from ..commons.pagination import make_pagination
 from ..commons.views import (
     exception_response, not_serializer_is_valid, serializer_valid_response, object_deleted_response,
@@ -313,9 +314,10 @@ class GiveAccessToDocumentFolderApi(views.APIView):
             return False
 
     def give_access_for_user(
-            self, creator, users: list, folders_or_documents: list, editable: bool, expiration_date: str,
+            self, users: list, folders_or_documents: list, editable: bool, expiration_date: str,
     ):
         with transaction.atomic():
+            creator = self.request.user
             documents_and_folders = FolderOrDocument.objects.select_related('organization', 'creator', 'parent')
             for folder_or_document in folders_or_documents:
                 folder_document = documents_and_folders.filter(id=folder_or_document).first()
@@ -337,6 +339,7 @@ class GiveAccessToDocumentFolderApi(views.APIView):
                             if not serializer.is_valid():
                                 return make_errors(serializer.errors)
                             serializer.save(creator_id=creator.id, organization_id=creator.organization.id)
+                            folder_or_document_access_notification(creator.id, user, serializer.data.get('id'))
                         if isinstance(user, str):
                             out_side_person = self.isValid(user)
                             if not out_side_person:
@@ -365,7 +368,7 @@ class GiveAccessToDocumentFolderApi(views.APIView):
             editable = data.get('editable')
             expiration_date = data.get('expiration_date')
             give_access = self.give_access_for_user(
-                creator, access_users, folders_or_documents, editable, expiration_date
+                access_users, folders_or_documents, editable, expiration_date
             )
             if give_access != True:
                 return Response(
@@ -376,8 +379,6 @@ class GiveAccessToDocumentFolderApi(views.APIView):
                         'data': []
                     }
                 )
-            if access_users and folders_or_documents:
-                pass
         except Exception as e:
             return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
         else:
@@ -514,7 +515,6 @@ class FolderDocumentUsersApi(views.APIView):
                     queryset_invites = GiveAccessToDocumentFolder.objects.select_related(
                         'organization', 'creator', 'user', 'folder_or_document',
                     ).filter(creator_id=user.id)
-
                     invites_in = self.remove_duplicated_user(queryset_invites.filter(user__isnull=False))
                     invites_out = self.remove_duplicated_out_side_person(queryset_invites.filter(user__isnull=True,))
                     my_invites = list(chain(invites_in, invites_out))

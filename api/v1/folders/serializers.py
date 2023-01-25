@@ -111,16 +111,16 @@ class UsersGiveAccessToDocumentFolderSerializer(serializers.ModelSerializer):
         res = super().to_representation(instance)
         if res.get('user'):
             res['user'] = {
+                'id': instance.user.id,
                 'first_name': instance.user.first_name,
                 'last_name': instance.user.last_name,
                 'email': instance.user.email,
                 'role': instance.user.role,
+                'is_outside': False,
             }
         else:
             res['user'] = {
-                'first_name': None,
-                'last_name': None,
                 'email': instance.out_side_person,
-                'role': None,
+                'is_outside': True,
             }
         return res

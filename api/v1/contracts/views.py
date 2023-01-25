@@ -903,9 +903,7 @@ class ContractImportDataFromExelApi(APIView):
             queryset_fields.append(key_list[field_name])
 
         for i in range(1, max_col + 1):
-            # print(i)
             cell_obj = sheet_obj.cell(row=2, column=i)
-            print(cell_obj.value, end=" ")
         return Response(
             {
                 'data': sheet_obj.max_column

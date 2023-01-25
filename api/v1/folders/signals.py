@@ -7,6 +7,8 @@ from .models import (
 from datetime import datetime
 import uuid
 
+from ..chat.notification_models.notifications import FolderOrDocumentAccessNotification
+
 
 def save_updated_time(instance):
     instance.updated_at = datetime.now()
@@ -22,6 +24,7 @@ def folder_post_save_signal(sender, instance, created, **kwargs):
     if created:
         instance.access_code = uuid.uuid4()
         instance.save()
+
 
 # @receiver(post_save, sender=Folder)
 # def folder_post_save_signal(sender, instance, created, **kwargs):
