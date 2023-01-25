@@ -487,14 +487,11 @@ class FolderDocumentUsersApi(views.APIView):
         return data
 
     def sort_listed_queryset(self, queryset_list):
-        print(type(queryset_list[0]))
-        print(queryset_list[0].order_by('-id'))
-        sorted_queryset = []
-        for i in range(queryset_list.values_list('id')):
-            print(i)
-            for x in range(i, queryset_list.values_list('id')):
-                if i > x:
-                    pass
+        with transaction.atomic():
+            for i in range(len(queryset_list)):
+                for x in range(i+1, len(queryset_list)):
+                    if queryset_list[i].id < queryset_list[x].id:
+                        queryset_list[i], queryset_list[x] = queryset_list[x], queryset_list[i]
 
     def get_queryset(self):
         queryset = User.objects.select_related('organization').filter(organization_id=self.request.user.organization.id)
@@ -521,6 +518,7 @@ class FolderDocumentUsersApi(views.APIView):
                     invites_in = self.remove_duplicated_user(queryset_invites.filter(user__isnull=False))
                     invites_out = self.remove_duplicated_out_side_person(queryset_invites.filter(user__isnull=True,))
                     my_invites = list(chain(invites_in, invites_out))
+                    self.sort_listed_queryset(my_invites)
                     return {
                         'queryset': my_invites,
                         'serializer': UsersGiveAccessToDocumentFolderSerializer
