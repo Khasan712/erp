@@ -294,24 +294,30 @@ class GiveAccessToDocumentFolderApi(views.APIView):
             return 'Send invite=`ID` in the params.'
         return self.get_queryset().filter(id=invite, creator_id=user.id).first()
 
-    def get_filtered_queryset(self):
-        user = self.request.user
-        params = self.request.query_params
-        invited_user = params.get('user')
-        if invited_user:
-            try:
-                invited_user = int(invited_user)
-            except ValueError:
-                return 'Send only user id.'
-            return self.get_queryset().filter(creator_id=user.id, user_id=invited_user)
-        return 'Send user=`ID` in the params.'
-
     def isValid(self, email):
         regex = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
         if re.fullmatch(regex, email):
             return True
         else:
             return False
+
+    def get_filtered_queryset(self):
+        user = self.request.user
+        params = self.request.query_params
+        inside_user = params.get('id')
+        outside_user = params.get('email')
+        if inside_user:
+            try:
+                invited_user = int(inside_user)
+            except ValueError:
+                return 'Send only user id.'
+            return self.get_queryset().filter(creator_id=user.id, user_id=invited_user)
+        if outside_user:
+            outside_user = self.isValid(outside_user)
+            if not outside_user:
+                return f"{outside_user} is not valid email"
+            return self.get_queryset().filter(creator_id=user.id, out_side_person=outside_user)
+        return 'Send id=`ID` or email=`email` in the params.'
 
     def give_access_for_user(
             self, users: list, folders_or_documents: list, editable: bool, expiration_date: str,
