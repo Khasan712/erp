@@ -294,6 +294,16 @@ class GiveAccessToDocumentFolderApi(views.APIView):
             return 'Send invite=`ID` in the params.'
         return self.get_queryset().filter(id=invite, creator_id=user.id).first()
 
+    def delete_my_invites(self):
+        my_invites = self.request.data
+        user = self.request.user
+        with transaction.atomic():
+            for my_invite in my_invites:
+                invite_obj = self.get_queryset().filter(id=my_invite, creator_id=user.id).first()
+                if not invite_obj:
+                    return f'{my_invite} not found.'
+                invite_obj.delete()
+
     def isValid(self, email):
         regex = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
         if re.fullmatch(regex, email):
@@ -367,7 +377,6 @@ class GiveAccessToDocumentFolderApi(views.APIView):
 
     def post(self, request):
         try:
-            creator = self.request.user
             data = self.request.data
             access_users = data.get('users')
             folders_or_documents = data.get('folder_or_document')
@@ -426,12 +435,9 @@ class GiveAccessToDocumentFolderApi(views.APIView):
 
     def delete(self, request):
         try:
-            obj = self.get_object()
-            if not obj:
-                return Response(object_not_found_response(), status=status.HTTP_400_BAD_REQUEST)
-            if isinstance(obj, str):
-                return Response(get_error_response(obj), status=status.HTTP_400_BAD_REQUEST)
-            obj.delete()
+            response = self.delete_my_invites()
+            if isinstance(response, str):
+                return Response(get_error_response(response), status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
         else:
