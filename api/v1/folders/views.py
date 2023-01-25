@@ -304,7 +304,7 @@ class GiveAccessToDocumentFolderApi(views.APIView):
     def get_filtered_queryset(self):
         user = self.request.user
         params = self.request.query_params
-        inside_user = params.get('id')
+        inside_user = params.get('user')
         outside_user = params.get('email')
         if inside_user:
             try:
@@ -317,7 +317,7 @@ class GiveAccessToDocumentFolderApi(views.APIView):
             if not outside_user:
                 return f"{outside_user} is not valid email"
             return self.get_queryset().filter(creator_id=user.id, out_side_person=outside_user)
-        return 'Send id=`ID` or email=`email` in the params.'
+        return 'Send user=`ID` or email=`email` in the params.'
 
     def give_access_for_user(
             self, users: list, folders_or_documents: list, editable: bool, expiration_date: str,
