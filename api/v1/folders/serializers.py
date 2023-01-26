@@ -35,7 +35,6 @@ class PatchAdministratorFolderOrDocumentSerializer(serializers.ModelSerializer):
 
 
 class PatchFolderOrDocumentSerializer(serializers.ModelSerializer):
-    """ Only contract administrator can remove folder or document from trash or delete """
 
     class Meta:
         model = FolderOrDocument

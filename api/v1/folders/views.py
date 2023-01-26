@@ -74,7 +74,7 @@ class PostListFolderOrDocumentApi(views.APIView):
 
 
 class PatchDeleteFolderOrDocumentApi(views.APIView):
-    """ Update document or folder """
+    """ Update document or folder and get by id"""
     permission_classes = (permissions.IsAuthenticated,)
 
     def get_queryset(self):
@@ -276,6 +276,7 @@ class TrashedDocumentFolderApi(views.APIView):
 
 
 class GiveAccessToDocumentFolderApi(views.APIView):
+    """  Give access for inside or outside users """
     permission_classes = (permissions.IsAuthenticated,)
 
     def get_queryset(self):
@@ -445,6 +446,7 @@ class GiveAccessToDocumentFolderApi(views.APIView):
 
 
 class OutsideInvitesApi(views.APIView):
+    """ Get outside invites """
     permission_classes = (permissions.IsAuthenticated,)
 
     def get_queryset(self):
@@ -477,6 +479,7 @@ class OutsideInvitesApi(views.APIView):
 
 
 class FolderDocumentUsersApi(views.APIView):
+    """ This api for get users who has folders or invited users or outside invited users """
     permission_classes = (permissions.IsAuthenticated,)
 
     def remove_duplicated_user(self, queryset):
@@ -557,4 +560,113 @@ class FolderDocumentUsersApi(views.APIView):
             return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response(make_pagination(request, serializer, queryset))
+
+
+class GetInsideOutsideInvitesFolderOrDocument(views.APIView):
+    """
+    This api to see folder or document which i give access to users and outside users or invites
+    in get request and patch request requires `invited user id and invited object id and item id - 'folder or document'`
+    """
+
+    def get_folder_or_document_queryset(self):
+        """ Get FolderOrDocument model """
+        return FolderOrDocument.objects.select_related('organization', 'creator', 'parent').filter(
+            organization_id=self.request.user.organization.id, is_trashed=False
+        )
+
+    def get_given_access_queryset(self):
+        """ Get GiveAccessToDocumentFolder model """
+        return GiveAccessToDocumentFolder.objects.select_related(
+            'organization', 'creator', 'user', 'folder_or_document'
+        ).filter(organization_id=self.request.user.organization.id)
+
+    def get_params(self):
+        params = self.request.query_params
+        invite_id = params.get('invite_id')
+        invited_user = params.get('invited_user')
+        item_id = params.get('item_id')
+        if not invite_id or not invited_user or not item_id:
+            return None
+        try:
+            invite_id = int(invite_id)
+            invited_user = int(invited_user)
+            item_id = int(item_id)
+        except ValueError:
+            return None
+        return {
+            'invite_id': invite_id,
+            'invited_user': invited_user,
+            'item_id': item_id
+        }
+
+    def get_given_access_object(self):
+        """ Get GiveAccessToDocumentFolder model object """
+        params = self.get_params()
+        if not params:
+            return None
+        return self.get_given_access_queryset().filter(id=params['invite_id'], user_id=params['invited_user']).first()
+
+    def get_folder_or_document_object(self):
+        """ Get FolderOrDocument model object """
+        params = self.get_params()
+        if not params:
+            return None
+        return self.get_folder_or_document_queryset().filter(id=params['item_id']).first()
+
+    def get_objects_and_queryset(self):
+        folder_or_document = self.get_folder_or_document_queryset()
+        invite_obj = self.get_given_access_object()
+        item_obj = self.get_folder_or_document_object()
+        if not folder_or_document or not invite_obj or not item_obj:
+            return None
+        return {
+            'folder_or_document': folder_or_document,
+            'invite_obj': invite_obj,
+            'item_obj': item_obj,
+            'user': self.request.user
+        }
+
+    def get_item_items(self):
+        """ This function validate item is children of folder in the invited object and return children of that item """
+        obj_and_query = self.get_objects_and_queryset()
+        if not obj_and_query:
+            return None
+        if obj_and_query['invite_obj'].folder_or_document.id > obj_and_query['item_obj'].id:
+            return None
+        for f_o_d in obj_and_query['folder_or_document'].filter(id__lte=obj_and_query['item_obj'].id, creator_id=obj_and_query['user'].id).order_by('-id'):
+            if f_o_d.id == obj_and_query['invite_obj'].folder_or_document.id:
+                return {
+                    'queryset': obj_and_query['folder_or_document'].filter(parent_id=f_o_d.id),
+                    'editable': obj_and_query['invite_obj'].editable,
+                    'expiration_date': obj_and_query['invite_obj'].expiration_date
+                }
+            if f_o_d.parent_id == obj_and_query['invite_obj'].folder_or_document.id:
+                return {
+                    'queryset': obj_and_query['folder_or_document'].filter(parent_id=obj_and_query['item_obj'].id),
+                    'editable': obj_and_query['invite_obj'].editable,
+                    'expiration_date': obj_and_query['invite_obj'].expiration_date
+                }
+            return None
+
+    def get(self, request):
+        try:
+            data = self.get_item_items()
+            if not data:
+                return Response(object_not_found_response(), status=status.HTTP_400_BAD_REQUEST)
+            queryset = data.get('queryset')
+            serializer = ListFolderOrDocumentSerializer
+        except Exception as e:
+            return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
+        response = make_pagination(request, serializer, queryset)
+        response['editable'] = data.get('editable')
+        response['expiration_date'] = data.get('expiration_date')
+        return Response(response, status=status.HTTP_200_OK)
+
+    def patch(self, request):
+        try:
+            pass
+        except Exception as e:
+            return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(make_pagination(request, None, None))
 

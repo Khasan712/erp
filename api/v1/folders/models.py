@@ -19,6 +19,14 @@ class FolderOrDocument(models.Model):
     def __str__(self):
         return f'{self.name} - {self.id}: {self.is_folder}'
 
+    def clean(self):
+        if self.document:
+            self.is_folder = False
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
 
 class GiveAccessToDocumentFolder(models.Model):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
