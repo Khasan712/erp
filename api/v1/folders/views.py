@@ -562,7 +562,7 @@ class FolderDocumentUsersApi(views.APIView):
             return Response(make_pagination(request, serializer, queryset))
 
 
-class GetInsideOutsideInvitesFolderOrDocument(views.APIView):
+class GetOutsideInvitesFolderOrDocument(views.APIView):
     """
     This api to see folder or document which i give access to users and outside users or invites
     in get request and patch request requires `invited user id and invited object id and item id - 'folder or document'`
@@ -580,6 +580,13 @@ class GetInsideOutsideInvitesFolderOrDocument(views.APIView):
             'organization', 'creator', 'user', 'folder_or_document'
         ).filter(organization_id=self.request.user.organization.id)
 
+    def isValid(self, email):
+        regex = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
+        if re.fullmatch(regex, email):
+            return True
+        else:
+            return False
+
     def get_params(self):
         params = self.request.query_params
         invite_id = params.get('invite_id')
@@ -589,7 +596,10 @@ class GetInsideOutsideInvitesFolderOrDocument(views.APIView):
             return None
         try:
             invite_id = int(invite_id)
-            invited_user = int(invited_user)
+            if self.isValid(invited_user):
+                invited_user = invited_user
+            else:
+                invited_user = int(invited_user)
             item_id = int(item_id)
         except ValueError:
             return None
@@ -604,6 +614,10 @@ class GetInsideOutsideInvitesFolderOrDocument(views.APIView):
         params = self.get_params()
         if not params:
             return None
+        if isinstance(params['invited_user'], str):
+            return self.get_given_access_queryset().filter(
+                id=params['invite_id'], out_side_person=params['invited_user']
+            ).first()
         return self.get_given_access_queryset().filter(id=params['invite_id'], user_id=params['invited_user']).first()
 
     def get_folder_or_document_object(self):
@@ -623,30 +637,34 @@ class GetInsideOutsideInvitesFolderOrDocument(views.APIView):
             'folder_or_document': folder_or_document,
             'invite_obj': invite_obj,
             'item_obj': item_obj,
-            'user': self.request.user
         }
 
-    def get_item_items(self):
-        """ This function validate item is children of folder in the invited object and return children of that item """
+    def validate_item(self):
+        """ This function validate item is children of folder in the invited object """
         obj_and_query = self.get_objects_and_queryset()
         if not obj_and_query:
             return None
         if obj_and_query['invite_obj'].folder_or_document.id > obj_and_query['item_obj'].id:
             return None
-        for f_o_d in obj_and_query['folder_or_document'].filter(id__lte=obj_and_query['item_obj'].id, creator_id=obj_and_query['user'].id).order_by('-id'):
+        for f_o_d in obj_and_query['folder_or_document'].filter(
+                id__lte=obj_and_query['item_obj'].id, creator_id=obj_and_query['invite_obj'].creator.id
+        ).order_by('-id'):
             if f_o_d.id == obj_and_query['invite_obj'].folder_or_document.id:
-                return {
-                    'queryset': obj_and_query['folder_or_document'].filter(parent_id=f_o_d.id),
-                    'editable': obj_and_query['invite_obj'].editable,
-                    'expiration_date': obj_and_query['invite_obj'].expiration_date
-                }
+                return True
             if f_o_d.parent_id == obj_and_query['invite_obj'].folder_or_document.id:
-                return {
-                    'queryset': obj_and_query['folder_or_document'].filter(parent_id=obj_and_query['item_obj'].id),
-                    'editable': obj_and_query['invite_obj'].editable,
-                    'expiration_date': obj_and_query['invite_obj'].expiration_date
-                }
+                return True
             return None
+
+    def get_item_items(self):
+        """ return children of that item """
+        validated_item_query = self.validate_item()
+        item_and_invite = self.get_objects_and_queryset()
+        if not validated_item_query:
+            return None
+        return {
+            'queryset': item_and_invite['folder_or_document'].filter(parent_id=item_and_invite['item_obj'].id),
+            'invite': item_and_invite['invite_obj'],
+        }
 
     def get(self, request):
         try:
@@ -658,8 +676,12 @@ class GetInsideOutsideInvitesFolderOrDocument(views.APIView):
         except Exception as e:
             return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
         response = make_pagination(request, serializer, queryset)
-        response['editable'] = data.get('editable')
-        response['expiration_date'] = data.get('expiration_date')
+        response['invite_obj'] = {
+            'invite_id': data['invite'].id,
+            'invited_user': data['invite'].user.id if data['invite'].user else data['invite'].out_side_person,
+            'editable': data['invite'].editable,
+            'expiration_date': data['invite'].expiration_date,
+        }
         return Response(response, status=status.HTTP_200_OK)
 
     def patch(self, request):
