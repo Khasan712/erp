@@ -12,6 +12,7 @@ from .serializers import (
     PatchAdministratorFolderOrDocumentSerializer, TrashedFolderOrDocumentSerializer, GedFolderOrDocumentSerializer,
     GiveAccessToDocumentFolderSerializer, ListGiveAccessToDocumentFolderSerializer,
     UpdateGiveAccessToDocumentFolderSerializer, UsersGiveAccessToDocumentFolderSerializer,
+    ListOutsideGiveAccessToDocumentFolderSerializer,
 )
 from api.v1.users.models import User
 from .models import (
@@ -29,7 +30,7 @@ from ..users.services import make_errors
 
 
 class PostListFolderOrDocumentApi(views.APIView):
-    """ Create document or folder """
+    """ Create document or folder and get list"""
     permission_classes = (permissions.IsAuthenticated,)
 
     def get_queryset(self):
@@ -74,23 +75,26 @@ class PostListFolderOrDocumentApi(views.APIView):
 
 
 class PatchDeleteFolderOrDocumentApi(views.APIView):
-    """ Update document or folder and get by id"""
+    """ Update document or folder by id"""
     permission_classes = (permissions.IsAuthenticated,)
 
     def get_queryset(self):
-        return FolderOrDocument.objects.select_related('organization', 'creator', 'parent')
+        return FolderOrDocument.objects.select_related('organization', 'creator', 'parent').filter(
+            creator_id=self.request.user.id, organization_id=self.request.user.organization.id
+        )
 
-    def get_object(self, id):
-        try:
-            item = self.get_queryset().get(id=id)
-        except Exception as e:
-            raise ValidationError('Object not found.')
-        else:
-            return item
+    def get_object(self, pk):
+        item = self.get_queryset().filter(id=pk).first()
+        if not item:
+            return None
+        return item
 
-    def patch(self, request, id):
+    def patch(self, request, pk):
         try:
-            serializer = PatchFolderOrDocumentSerializer(self.get_object(id), data=self.request.data, partial=True)
+            item_obj = self.get_object(pk)
+            if not item_obj:
+                return Response(object_not_found_response(), status=status.HTTP_400_BAD_REQUEST)
+            serializer = PatchFolderOrDocumentSerializer(item_obj, data=self.request.data, partial=True)
             if not serializer.is_valid():
                 return Response(not_serializer_is_valid(serializer.errors), status=status.HTTP_400_BAD_REQUEST)
             serializer.save()
@@ -99,9 +103,12 @@ class PatchDeleteFolderOrDocumentApi(views.APIView):
         else:
             return Response(serializer_valid_response(serializer), status=status.HTTP_200_OK)
 
-    def get(self, request, id):
+    def get(self, request, pk):
         try:
-            serializer = GedFolderOrDocumentSerializer(self.get_object(id), data=self.request.data, partial=True)
+            item_obj = self.get_object(pk)
+            if not item_obj:
+                return Response(object_not_found_response(), status=status.HTTP_400_BAD_REQUEST)
+            serializer = GedFolderOrDocumentSerializer(item_obj, data=self.request.data, partial=True)
             if not serializer.is_valid():
                 return Response(not_serializer_is_valid(serializer.errors), status=status.HTTP_400_BAD_REQUEST)
             serializer.save()
@@ -112,6 +119,9 @@ class PatchDeleteFolderOrDocumentApi(views.APIView):
 
 
 class MoveToTrashDocumentFolderApi(views.APIView):
+    """
+    WHen someone delete document or folder those things goes to trash and only Contract administrator can remove them
+    """
     permission_classes = (permissions.IsAuthenticated,)
 
     def get_queryset(self):
@@ -145,21 +155,22 @@ class MoveToTrashDocumentFolderApi(views.APIView):
 
 
 class ListUsersDocumentFolderAPI(views.APIView):
-    """ This API for Sourcing director to see all employee documents and folders """
+    """
+        This api for Sourcing director to see all employee documents and folders.
+    """
     permission_classes = (permissions.IsAuthenticated, IsSourcingDirector)
 
     def get_queryset(self):
-        return FolderOrDocument.objects.select_related('organization', 'creator', 'parent')
+        return FolderOrDocument.objects.select_related('organization', 'creator', 'parent').filter(
+            is_trashed=False, organization_id=self.request.user.organization.id,
+        )
 
     def get_filter(self):
         params = self.request.query_params
-        user = self.request.user
         selected_user = params.get('user')
         if not selected_user:
-            raise ValidationError('Select user')
-        queryset = self.get_queryset().filter(
-            is_trashed=False, organization_id=user.organization.id, creator_id=selected_user
-        )
+            return None
+        queryset = self.get_queryset().filter(creator_id=selected_user)
         q = params.get('q')
         parent_id = params.get('parent')
         if not parent_id:
@@ -173,6 +184,8 @@ class ListUsersDocumentFolderAPI(views.APIView):
     def get(self, request):
         try:
             filtered_queryset = self.get_filter()
+            if not filtered_queryset:
+                return Response(object_not_found_response(), status=status.HTTP_400_BAD_REQUEST)
             serializer = ListFolderOrDocumentSerializer
         except Exception as e:
             return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
@@ -181,7 +194,7 @@ class ListUsersDocumentFolderAPI(views.APIView):
 
 
 class RemoveTrashOrDeleteFolderOrDocumentApi(views.APIView):
-    """ This api for remove folder or document from trash or delete """
+    """ This api for remove folder or document from trash or delete. Only Contract administrator can do it """
 
     permission_classes = (permissions.IsAuthenticated, IsContractAdministrator)
 
@@ -247,13 +260,12 @@ class TrashedDocumentFolderApi(views.APIView):
     permission_classes = (permissions.IsAuthenticated, IsContractAdministrator)
 
     def get_queryset(self):
-        return FolderOrDocument.objects.select_related('organization', 'creator', 'parent')
+        return FolderOrDocument.objects.select_related('organization', 'creator', 'parent').filter(
+            is_trashed=True, organization_id=self.request.user.organization.id
+        )
 
     def get_filter(self):
-        user = self.request.user
-        queryset = self.get_queryset().filter(
-            is_trashed=True, organization_id=user.organization.id
-        )
+        queryset = self.get_queryset()
         params = self.request.query_params
         q = params.get('q')
         parent_id = params.get('parent')
@@ -305,7 +317,7 @@ class GiveAccessToDocumentFolderApi(views.APIView):
                     return f'{my_invite} not found.'
                 invite_obj.delete()
 
-    def isValid(self, email):
+    def validate_email(self, email):
         regex = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
         if re.fullmatch(regex, email):
             return True
@@ -324,7 +336,7 @@ class GiveAccessToDocumentFolderApi(views.APIView):
                 return 'Send only user id.'
             return self.get_queryset().filter(creator_id=user.id, user_id=invited_user)
         if outside_user:
-            outside_user = self.isValid(outside_user)
+            outside_user = self.validate_email(outside_user)
             if not outside_user:
                 return f"{outside_user} is not valid email"
             return self.get_queryset().filter(creator_id=user.id, out_side_person=outside_user)
@@ -446,40 +458,134 @@ class GiveAccessToDocumentFolderApi(views.APIView):
 
 
 class OutsideInvitesApi(views.APIView):
-    """ Get outside invites """
+    """ Get outside invites and inters folders or documents """
     permission_classes = (permissions.IsAuthenticated,)
 
-    def get_queryset(self):
-        queryset = GiveAccessToDocumentFolder.objects.select_related(
+    def get_given_access_queryset(self):
+        """ Get GiveAccessToDocumentFolder model """
+        return GiveAccessToDocumentFolder.objects.select_related(
             'organization', 'creator', 'user', 'folder_or_document'
-        ).filter(organization_id=self.request.user.organization.id)
-        return queryset
+        ).filter(organization_id=self.request.user.organization.id, user_id=self.request.user.id)
 
-    def get_filtered_queryset(self):
-        user = self.request.user
+    def get_folder_or_document_queryset(self):
+        """ Get FolderOrDocument model """
+        return FolderOrDocument.objects.select_related('organization', 'creator', 'parent').filter(
+            organization_id=self.request.user.organization.id, is_trashed=False
+        )
+
+    def get_params(self):
         params = self.request.query_params
-        outside_user_invited = params.get('user')
-        if outside_user_invited:
+        inviter_id = params.get('inviter_id')
+        invite_id = params.get('invite_id')
+        item_id = params.get('item_id')
+        if not inviter_id:
+            return None
+        try:
+            inviter_id = int(inviter_id)
+        except ValueError:
+            return None
+        if invite_id and item_id:
             try:
-                outside_user_invited = int(outside_user_invited)
+                invite_id = int(invite_id)
+                item_id = int(item_id)
             except ValueError:
-                return 'Send only user id.'
-            return self.get_queryset().filter(creator_id=outside_user_invited, user_id=user.id)
-        return 'Send user=`ID` in the params.'
+                return None
+        return {
+            'inviter_id': inviter_id,
+            'invite_id': invite_id,
+            'item_id': item_id,
+        }
+
+    def get_given_access_object(self):
+        """ Get GiveAccessToDocumentFolder model object """
+        params = self.get_params()
+        if not params['invite_id']:
+            return None
+        return self.get_given_access_queryset().filter(
+            id=params['invite_id'], user_id=self.request.user.id
+        ).first()
+
+    def get_folder_or_document_object(self):
+        """ Get FolderOrDocument model object """
+        params = self.get_params()
+        if not params['item_id'] and not params['inviter_id']:
+            return None
+        return self.get_folder_or_document_queryset().filter(
+            id=params['item_id'], creator_id=params['inviter_id']
+        ).first()
+
+    def get_objects_and_queryset(self):
+        folder_or_document = self.get_folder_or_document_queryset()
+        invite_obj = self.get_given_access_object()
+        item_obj = self.get_folder_or_document_object()
+        if not folder_or_document or not invite_obj or not item_obj:
+            return None
+        return {
+            'folder_or_document': folder_or_document,
+            'invite_obj': invite_obj,
+            'item_obj': item_obj,
+        }
+
+    def validate_item(self):
+        """ This function validate item is children of folder in the invited object """
+        obj_and_query = self.get_objects_and_queryset()
+        if not obj_and_query:
+            return None
+        if obj_and_query['invite_obj'].folder_or_document.id > obj_and_query['item_obj'].id:
+            return None
+        for f_o_d in obj_and_query['folder_or_document'].filter(
+                id__lte=obj_and_query['item_obj'].id, creator_id=obj_and_query['invite_obj'].creator.id
+        ).order_by('-id'):
+            if f_o_d.id == obj_and_query['invite_obj'].folder_or_document.id:
+                return True
+            if f_o_d.parent_id == obj_and_query['invite_obj'].folder_or_document.id:
+                return True
+            return None
+
+    def get_filtered_data(self):
+        params = self.get_params()
+        if not params:
+            return None
+        if not params['invite_id'] and not params['item_id']:
+            return {
+                'queryset': self.get_given_access_queryset().filter(creator_id=params['inviter_id']),
+                'serializer': ListOutsideGiveAccessToDocumentFolderSerializer
+            }
+        validated_item_query = self.validate_item()
+        if not validated_item_query:
+            return None
+        obj_and_query = self.get_objects_and_queryset()
+        return {
+            'queryset': obj_and_query['folder_or_document'].filter(parent_id=obj_and_query['item_obj'].id),
+            'serializer': ListFolderOrDocumentSerializer,
+            'invite': obj_and_query['invite_obj'],
+        }
 
     def get(self, request):
         try:
-            outside_invites = self.get_filtered_queryset()
-            if isinstance(outside_invites, str):
-                return Response(get_error_response(outside_invites))
-            serializer = ListGiveAccessToDocumentFolderSerializer
+            outside_invites_and_folders = self.get_filtered_data()
+            if not outside_invites_and_folders:
+                return Response(object_not_found_response(), status=status.HTTP_400_BAD_REQUEST)
+            if not outside_invites_and_folders.get('invite'):
+                serializer = outside_invites_and_folders['serializer']
+                queryset = outside_invites_and_folders['queryset']
+                return Response(make_pagination(request, serializer, queryset))
+            serializer = outside_invites_and_folders['serializer']
+            queryset = outside_invites_and_folders['queryset']
+            response = make_pagination(request, serializer, queryset)
+            response['invite_obj'] = {
+                'invite_id': outside_invites_and_folders['invite'].id,
+                'invited_user': outside_invites_and_folders['invite'].creator.id,
+                'editable': outside_invites_and_folders['invite'].editable,
+                'expiration_date': outside_invites_and_folders['invite'].expiration_date,
+            }
+            return Response(response, status=status.HTTP_200_OK)
         except Exception as e:
             return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
-        return Response(make_pagination(request, serializer, outside_invites))
 
 
 class FolderDocumentUsersApi(views.APIView):
-    """ This api for get users who has folders or invited users or outside invited users """
+    """ This api for get users who have folders or invited users or outside invited users """
     permission_classes = (permissions.IsAuthenticated,)
 
     def remove_duplicated_user(self, queryset):
@@ -563,6 +669,129 @@ class FolderDocumentUsersApi(views.APIView):
 
 
 class GetOutsideInvitesFolderOrDocument(views.APIView):
+    """
+    This api to see folder or document which i give access to users and outside users
+    in get request and patch request requires `invited user id and invited object id and item id - 'folder or document'`
+    """
+
+    def get_folder_or_document_queryset(self):
+        """ Get FolderOrDocument model """
+        return FolderOrDocument.objects.select_related('organization', 'creator', 'parent').filter(
+            organization_id=self.request.user.organization.id, is_trashed=False
+        )
+
+    def get_given_access_queryset(self):
+        """ Get GiveAccessToDocumentFolder model """
+        return GiveAccessToDocumentFolder.objects.select_related(
+            'organization', 'creator', 'user', 'folder_or_document'
+        ).filter(organization_id=self.request.user.organization.id)
+
+    def validate_email(self, email):
+        regex = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
+        if re.fullmatch(regex, email):
+            return True
+        else:
+            return False
+
+    def get_params(self):
+        params = self.request.query_params
+        invite_id = params.get('invite_id')
+        invited_user = params.get('invited_user')
+        item_id = params.get('item_id')
+        if not invite_id or not invited_user or not item_id:
+            return None
+        try:
+            invite_id = int(invite_id)
+            if self.validate_email(invited_user):
+                invited_user = invited_user
+            else:
+                invited_user = int(invited_user)
+            item_id = int(item_id)
+        except ValueError:
+            return None
+        return {
+            'invite_id': invite_id,
+            'invited_user': invited_user,
+            'item_id': item_id
+        }
+
+    def get_given_access_object(self):
+        """ Get GiveAccessToDocumentFolder model object """
+        params = self.get_params()
+        if not params:
+            return None
+        if isinstance(params['invited_user'], str):
+            return self.get_given_access_queryset().filter(
+                id=params['invite_id'], out_side_person=params['invited_user']
+            ).first()
+        return self.get_given_access_queryset().filter(id=params['invite_id'], user_id=params['invited_user']).first()
+
+    def get_folder_or_document_object(self):
+        """ Get FolderOrDocument model object """
+        params = self.get_params()
+        if not params:
+            return None
+        return self.get_folder_or_document_queryset().filter(id=params['item_id']).first()
+
+    def get_objects_and_queryset(self):
+        folder_or_document = self.get_folder_or_document_queryset()
+        invite_obj = self.get_given_access_object()
+        item_obj = self.get_folder_or_document_object()
+        if not folder_or_document or not invite_obj or not item_obj:
+            return None
+        return {
+            'folder_or_document': folder_or_document,
+            'invite_obj': invite_obj,
+            'item_obj': item_obj,
+        }
+
+    def validate_item(self):
+        """ This function validate item is children of folder in the invited object """
+        obj_and_query = self.get_objects_and_queryset()
+        if not obj_and_query:
+            return None
+        if obj_and_query['invite_obj'].folder_or_document.id > obj_and_query['item_obj'].id:
+            return None
+        for f_o_d in obj_and_query['folder_or_document'].filter(
+                id__lte=obj_and_query['item_obj'].id, creator_id=obj_and_query['invite_obj'].creator.id
+        ).order_by('-id'):
+            if f_o_d.id == obj_and_query['invite_obj'].folder_or_document.id:
+                return True
+            if f_o_d.parent_id == obj_and_query['invite_obj'].folder_or_document.id:
+                return True
+            return None
+
+    def get_item_items(self):
+        """ return children of that item """
+        validated_item_query = self.validate_item()
+        item_and_invite = self.get_objects_and_queryset()
+        if not validated_item_query:
+            return None
+        return {
+            'queryset': item_and_invite['folder_or_document'].filter(parent_id=item_and_invite['item_obj'].id),
+            'invite': item_and_invite['invite_obj'],
+        }
+
+    def get(self, request):
+        try:
+            data = self.get_item_items()
+            if not data:
+                return Response(object_not_found_response(), status=status.HTTP_400_BAD_REQUEST)
+            queryset = data.get('queryset')
+            serializer = ListFolderOrDocumentSerializer
+        except Exception as e:
+            return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
+        response = make_pagination(request, serializer, queryset)
+        response['invite_obj'] = {
+            'invite_id': data['invite'].id,
+            'invited_user': data['invite'].user.id if data['invite'].user else data['invite'].out_side_person,
+            'editable': data['invite'].editable,
+            'expiration_date': data['invite'].expiration_date,
+        }
+        return Response(response, status=status.HTTP_200_OK)
+
+
+class GetOutsideFolderOrDocument(views.APIView):
     """
     This api to see folder or document which i give access to users and outside users or invites
     in get request and patch request requires `invited user id and invited object id and item id - 'folder or document'`
@@ -683,12 +912,4 @@ class GetOutsideInvitesFolderOrDocument(views.APIView):
             'expiration_date': data['invite'].expiration_date,
         }
         return Response(response, status=status.HTTP_200_OK)
-
-    def patch(self, request):
-        try:
-            pass
-        except Exception as e:
-            return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
-        else:
-            return Response(make_pagination(request, None, None))
 

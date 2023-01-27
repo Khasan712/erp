@@ -123,3 +123,30 @@ class UsersGiveAccessToDocumentFolderSerializer(serializers.ModelSerializer):
                 'is_outside': True,
             }
         return res
+
+
+class ListOutsideGiveAccessToDocumentFolderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GiveAccessToDocumentFolder
+        fields = ('id', 'user', 'folder_or_document', 'editable', 'expiration_date')
+
+    def to_representation(self, instance):
+        response = super().to_representation(instance)
+        if response.get('user'):
+            response['user'] = {
+                'id': instance.user.id,
+                'first_name': instance.user.first_name,
+                'last_name': instance.user.last_name,
+                'email': instance.user.email,
+            }
+        if not instance.folder_or_document.document:
+            response['folder_or_document'] = {
+                'id': instance.folder_or_document.id,
+                'name': instance.folder_or_document.name,
+            }
+        if instance.folder_or_document.document:
+            response['folder_or_document'] = {
+                'id': instance.folder_or_document.id,
+                'document': f'/media/{instance.folder_or_document.document.name}',
+            }
+        return response
