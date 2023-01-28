@@ -456,7 +456,7 @@ class GiveAccessToDocumentFolderApi(views.APIView):
             return Response(object_deleted_response(), status=status.HTTP_204_NO_CONTENT)
 
 
-class OutsideInvitesApi(views.APIView):
+class GetOutsideInvitesApi(views.APIView):
     """ Get outside invites and inters folders or documents """
     permission_classes = (permissions.IsAuthenticated,)
 
@@ -670,7 +670,7 @@ class FolderDocumentUsersApi(views.APIView):
             return Response(make_pagination(request, serializer, queryset))
 
 
-class GetOutsideInvitesFolderOrDocument(views.APIView):
+class GetInsideInvitesFolderOrDocument(views.APIView):
     """
     This api to see folder or document which i give access to users and outside users
     in get request and patch request requires `invited user id and invited object id and item id - 'folder or document'`
@@ -686,7 +686,10 @@ class GetOutsideInvitesFolderOrDocument(views.APIView):
         """ Get GiveAccessToDocumentFolder model """
         return GiveAccessToDocumentFolder.objects.select_related(
             'organization', 'creator', 'user', 'folder_or_document'
-        ).filter(organization_id=self.request.user.organization.id, creator_id=self.request.user.id)
+        ).filter(
+            organization_id=self.request.user.organization.id, creator_id=self.request.user.id,
+            folder_or_document__is_trashed=False
+        )
 
     def validate_email(self, email):
         """ Validation email """
