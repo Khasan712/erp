@@ -13,6 +13,7 @@ from .serializers import (
     GiveAccessToDocumentFolderSerializer, ListGiveAccessToDocumentFolderSerializer,
     UpdateGiveAccessToDocumentFolderSerializer, UsersGiveAccessToDocumentFolderSerializer,
     ListOutsideGiveAccessToDocumentFolderSerializer, UpdateOutsideInvitesDocumentFolderSerializer,
+    GetSharedLinkInviteSerializer, GetSharedLinkDocumentOrFolderSerializer,
 )
 from api.v1.users.models import User
 from .models import (
@@ -938,3 +939,121 @@ class GetOutsideFolderOrDocument(views.APIView):
         }
         return Response(response, status=status.HTTP_200_OK)
 
+
+class SharedLinkAPi(views.APIView):
+    """ This api for users who have received share ink email message """
+
+    def get_given_access_queryset(self):
+        return GiveAccessToDocumentFolder.objects.select_related('organization', 'creator', 'user', 'folder_or_document')
+
+    def get_params(self):
+        params = self.request.query_params
+        token = params.get('token')
+        item_id = params.get('item_id')
+        if not token:
+            return None
+        if item_id:
+            try:
+                item_id = int(item_id)
+            except ValueError:
+                return None
+        return {
+            'token': token,
+            'item_id': item_id,
+        }
+
+    def check_token(self):
+        params = self.get_params()
+        if not params:
+            return None
+        given_access_queryset = self.get_given_access_queryset().filter(access_code=params['token']).first()
+        if not given_access_queryset:
+            return None
+        return given_access_queryset
+
+    def get_folder_or_document_queryset(self):
+        token = self.check_token()
+        if not token:
+            return None
+        return FolderOrDocument.objects.select_related('organization', 'creator', 'parent').filter(
+            creator_id=token.creator_id,
+        )
+
+    def check_item_id(self):
+        params = self.get_params()
+        token = self.check_token()
+        if not token or not params['item_id']:
+            return None
+        return self.get_folder_or_document_queryset().filter(id=params['item_id']).first()
+
+    def check_item_parent(self, access_folder_id: int, item_obj):
+        """ Validate item object for know this is a child of invite object folder """
+        if item_obj.parent:
+            if item_obj.parent.id < access_folder_id:
+                return False
+            if item_obj.parent.id == access_folder_id:
+                return True
+        if item_obj.parent is None:
+            return False
+        else:
+            return self.check_item_parent(access_folder_id, item_obj.parent)
+
+    def validate_item(self):
+        token = self.check_token()
+        item_obj = self.check_item_id()
+        if not token or not item_obj:
+            return None
+        if token.folder_or_document_id > item_obj.id:
+            return None
+        if token.folder_or_document_id == item_obj.id:
+            return {
+                'queryset': self.get_folder_or_document_queryset().filter(parent_id=item_obj.id)
+            }
+        else:
+            check_item = self.check_item_parent(token.folder_or_document_id, item_obj)
+            if not check_item:
+                return None
+            return {
+                'queryset': self.get_folder_or_document_queryset().filter(parent_id=item_obj.id)
+            }
+
+    def get(self, request):
+        try:
+            params = self.get_params()
+            invite_obj = self.check_token()
+            if not params:
+                return Response(object_not_found_response(), status=status.HTTP_400_BAD_REQUEST)
+            if not params['item_id']:
+                serializer = GetSharedLinkInviteSerializer(invite_obj)
+                return Response(serializer_valid_response(serializer), status=status.HTTP_200_OK)
+            validate_item = self.validate_item()
+            if not validate_item:
+                return Response(object_not_found_response(), status=status.HTTP_400_BAD_REQUEST)
+            serializer = GetSharedLinkDocumentOrFolderSerializer
+        except Exception as e:
+            return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
+        else:
+            response = make_pagination(request, serializer, validate_item['queryset'])
+            response['invite_obj'] = {
+                'invite_id': invite_obj.id,
+                'editable': invite_obj.editable,
+            }
+            return Response(response, status=status.HTTP_200_OK)
+
+    def patch(self, request):
+        try:
+            params = self.get_params()
+            if not params or not params['item_id']:
+                return Response(object_not_found_response(), status=status.HTTP_400_BAD_REQUEST)
+            validate_item = self.validate_item()
+            if not validate_item:
+                return Response(object_not_found_response(), status=status.HTTP_400_BAD_REQUEST)
+            item_obj = self.check_item_id()
+            serializer = GetSharedLinkDocumentOrFolderSerializer(item_obj, data=self.request.data, partial=True)
+            if not serializer.is_valid():
+                return Response(not_serializer_is_valid(serializer), status=status.HTTP_400_BAD_REQUEST)
+            serializer.save()
+        except Exception as e:
+            return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(get_valid_response(), status=status.HTTP_200_OK)

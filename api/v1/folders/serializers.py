@@ -156,3 +156,30 @@ class UpdateOutsideInvitesDocumentFolderSerializer(serializers.ModelSerializer):
     class Meta:
         model = FolderOrDocument
         fields = ('id', 'name', 'document')
+
+
+class GetSharedLinkInviteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GiveAccessToDocumentFolder
+        fields = ('id', 'folder_or_document')
+
+    def to_representation(self, instance):
+        res = super().to_representation(instance)
+        if not instance.folder_or_document.document:
+            res['folder_or_document'] = {
+                'id': instance.folder_or_document_id,
+                'name': instance.folder_or_document.name,
+            }
+        else:
+            res['folder_or_document'] = {
+                'id': instance.folder_or_document_id,
+                'document': f'/media/{instance.folder_or_document.document.name}'
+            }
+        return res
+
+
+class GetSharedLinkDocumentOrFolderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FolderOrDocument
+        fields = ('id', 'name', 'document')
+

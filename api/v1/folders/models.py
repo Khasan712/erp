@@ -32,7 +32,7 @@ class GiveAccessToDocumentFolder(models.Model):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='access_creator')
     user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True, related_name='access_user')
-    folder_or_document = models.ForeignKey(FolderOrDocument, on_delete=models.CASCADE)
+    folder_or_document = models.ForeignKey(FolderOrDocument, on_delete=models.CASCADE, related_name='access_item')
     out_side_person = models.EmailField(max_length=250, blank=True, null=True)
     access_code = models.CharField(max_length=100, blank=True, null=True)
     editable = models.BooleanField(default=False)
