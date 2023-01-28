@@ -150,3 +150,9 @@ class ListOutsideGiveAccessToDocumentFolderSerializer(serializers.ModelSerialize
                 'document': f'/media/{instance.folder_or_document.document.name}',
             }
         return response
+
+
+class UpdateOutsideInvitesDocumentFolderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FolderOrDocument
+        fields = ('id', 'name', 'document')

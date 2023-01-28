@@ -12,7 +12,7 @@ from .serializers import (
     PatchAdministratorFolderOrDocumentSerializer, TrashedFolderOrDocumentSerializer, GedFolderOrDocumentSerializer,
     GiveAccessToDocumentFolderSerializer, ListGiveAccessToDocumentFolderSerializer,
     UpdateGiveAccessToDocumentFolderSerializer, UsersGiveAccessToDocumentFolderSerializer,
-    ListOutsideGiveAccessToDocumentFolderSerializer,
+    ListOutsideGiveAccessToDocumentFolderSerializer, UpdateOutsideInvitesDocumentFolderSerializer,
 )
 from api.v1.users.models import User
 from .models import (
@@ -22,7 +22,7 @@ from ..chat.tasks import folder_or_document_access_notification
 from ..commons.pagination import make_pagination
 from ..commons.views import (
     exception_response, not_serializer_is_valid, serializer_valid_response, object_deleted_response,
-    serializer_update_valid_response, object_not_found_response, get_error_response,
+    serializer_update_valid_response, object_not_found_response, get_error_response, get_valid_response,
 )
 from ..users.permissions import IsSourcingDirector, IsContractAdministrator
 from ..users.serializers import UserUpdateSerializer, FolderDocumentUsersSerializer
@@ -500,6 +500,22 @@ class GetOutsideInvitesApi(views.APIView):
             'item_id': item_id,
         }
 
+    def get_item_obj(self):
+        params = self.get_params()
+        if not params['item_id'] and not params['invite_id']:
+            return None
+        return self.get_folder_or_document_queryset().filter(
+            id=params['item_id'], creator_id=params['inviter_id']
+        ).first()
+
+    def get_invite_obj(self):
+        params = self.get_params()
+        if not params['item_id'] and not params['invite_id']:
+            return None
+        return self.get_given_access_queryset().filter(
+            id=params['invite_id'], creator_id=params['inviter_id']
+        ).first()
+
     def get_objects_and_queryset(self):
         print('6')
         params = self.get_params()
@@ -556,6 +572,15 @@ class GetOutsideInvitesApi(views.APIView):
                     'invite': obj_and_query['invite_obj'],
                 }
 
+    def check_item_for_update(self, item_obj):
+        invite_obj = self.get_invite_obj()
+        if not item_obj or not invite_obj or item_obj.id < invite_obj.folder_or_document_id:
+            return None
+        if item_obj.id == invite_obj.folder_or_document_id:
+            return True
+        else:
+            return self.validate_item(invite_obj.folder_or_document_id, item_obj)
+
     def get(self, request):
         try:
             outside_invites_and_folders = self.get_filtered_data()
@@ -577,6 +602,21 @@ class GetOutsideInvitesApi(views.APIView):
             return Response(response, status=status.HTTP_200_OK)
         except Exception as e:
             return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
+
+    def patch(self, request):
+        try:
+            item_obj = self.get_item_obj()
+            check_item = self.check_item_for_update(item_obj)
+            if not check_item:
+                return Response(object_not_found_response(), status=status.HTTP_400_BAD_REQUEST)
+            serializer = UpdateOutsideInvitesDocumentFolderSerializer(item_obj, data=self.request.data, partial=True)
+            if not serializer.is_valid():
+                return Response(not_serializer_is_valid(serializer), status=status.HTTP_400_BAD_REQUEST)
+            serializer.save()
+        except Exception as e:
+            return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(get_valid_response(), status=status.HTTP_200_OK)
 
 
 class FolderDocumentUsersApi(views.APIView):

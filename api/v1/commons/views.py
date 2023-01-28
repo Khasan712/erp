@@ -43,10 +43,19 @@ def serializer_valid_response(serializer):
     }
 
 
+def get_valid_response():
+    return {
+        "success": True,
+        "message": 'Successfully done.',
+        "error": [],
+        "data": [],
+    }
+
+
 def serializer_update_valid_response(serializer):
     return {
         "success": True,
-        "message": 'Data created successfully.',
+        "message": 'Data updated successfully.',
         "error": [],
         "data": serializer.data,
     }
