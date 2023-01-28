@@ -338,8 +338,6 @@ class GiveAccessToDocumentFolderApi(views.APIView):
         if outside_user:
             if not self.validate_email(outside_user):
                 return f"{outside_user} is not valid email"
-            print(outside_user)
-            print(self.get_queryset().filter(creator_id=user.id, out_side_person=outside_user))
             return self.get_queryset().filter(creator_id=user.id, out_side_person=outside_user)
         return 'Send user=`ID` or email=`email` in the params.'
 
@@ -685,9 +683,10 @@ class GetOutsideInvitesFolderOrDocument(views.APIView):
         """ Get GiveAccessToDocumentFolder model """
         return GiveAccessToDocumentFolder.objects.select_related(
             'organization', 'creator', 'user', 'folder_or_document'
-        ).filter(organization_id=self.request.user.organization.id)
+        ).filter(organization_id=self.request.user.organization.id, creator_id=self.request.user.id)
 
     def validate_email(self, email):
+        """ Validation email """
         regex = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
         if re.fullmatch(regex, email):
             return True
@@ -695,49 +694,29 @@ class GetOutsideInvitesFolderOrDocument(views.APIView):
             return False
 
     def get_params(self):
+        """ Getting params and checking """
         params = self.request.query_params
         invite_id = params.get('invite_id')
-        invited_user = params.get('invited_user')
         item_id = params.get('item_id')
-        if not invite_id or not invited_user or not item_id:
+        if not invite_id or not item_id:
             return None
         try:
             invite_id = int(invite_id)
-            if self.validate_email(invited_user):
-                invited_user = invited_user
-            else:
-                invited_user = int(invited_user)
-            item_id = int(item_id)
         except ValueError:
             return None
         return {
             'invite_id': invite_id,
-            'invited_user': invited_user,
             'item_id': item_id
         }
 
-    def get_given_access_object(self):
-        """ Get GiveAccessToDocumentFolder model object """
-        params = self.get_params()
-        if not params:
-            return None
-        if isinstance(params['invited_user'], str):
-            return self.get_given_access_queryset().filter(
-                id=params['invite_id'], out_side_person=params['invited_user']
-            ).first()
-        return self.get_given_access_queryset().filter(id=params['invite_id'], user_id=params['invited_user']).first()
-
-    def get_folder_or_document_object(self):
-        """ Get FolderOrDocument model object """
-        params = self.get_params()
-        if not params:
-            return None
-        return self.get_folder_or_document_queryset().filter(id=params['item_id']).first()
-
     def get_objects_and_queryset(self):
+        """ For getting folders queryset and invite object and also item object which user requested """
+        params = self.get_params()
+        if not params:
+            return None
         folder_or_document = self.get_folder_or_document_queryset()
-        invite_obj = self.get_given_access_object()
-        item_obj = self.get_folder_or_document_object()
+        invite_obj = self.get_given_access_queryset().filter(id=params['invite_id']).first()
+        item_obj = folder_or_document.filter(id=params['item_id']).first()
         if not folder_or_document or not invite_obj or not item_obj:
             return None
         return {
@@ -746,32 +725,38 @@ class GetOutsideInvitesFolderOrDocument(views.APIView):
             'item_obj': item_obj,
         }
 
-    def validate_item(self):
-        """ This function validate item is children of folder in the invited object """
+    def validate_item(self, access_folder_id: int, item_obj):
+        """ Validate item object for know this is a child of invite object folder """
+        if item_obj.parent:
+            if item_obj.parent.id < access_folder_id:
+                return False
+            if item_obj.parent.id == access_folder_id:
+                return True
+        if item_obj.parent is None:
+            return False
+        else:
+            return self.validate_item(access_folder_id, item_obj.parent)
+
+    def get_item_items(self):
+        """
+        if requested item is really child of invite object folder or its own, it will return children of requested item.
+        """
         obj_and_query = self.get_objects_and_queryset()
         if not obj_and_query:
             return None
         if obj_and_query['invite_obj'].folder_or_document.id > obj_and_query['item_obj'].id:
             return None
-        for f_o_d in obj_and_query['folder_or_document'].filter(
-                id__lte=obj_and_query['item_obj'].id, creator_id=obj_and_query['invite_obj'].creator.id
-        ).order_by('-id'):
-            if f_o_d.id == obj_and_query['invite_obj'].folder_or_document.id:
-                return True
-            if f_o_d.parent_id == obj_and_query['invite_obj'].folder_or_document.id:
-                return True
-            return None
-
-    def get_item_items(self):
-        """ return children of that item """
-        validated_item_query = self.validate_item()
-        item_and_invite = self.get_objects_and_queryset()
-        if not validated_item_query:
-            return None
-        return {
-            'queryset': item_and_invite['folder_or_document'].filter(parent_id=item_and_invite['item_obj'].id),
-            'invite': item_and_invite['invite_obj'],
-        }
+        if obj_and_query['invite_obj'].folder_or_document.id == obj_and_query['item_obj'].id:
+            return {
+                'queryset': obj_and_query['folder_or_document'].filter(parent_id=obj_and_query['item_obj'].id),
+                'invite': obj_and_query['invite_obj'],
+            }
+        else:
+            if self.validate_item(obj_and_query['invite_obj'].folder_or_document.id, obj_and_query['item_obj']):
+                return {
+                    'queryset': obj_and_query['folder_or_document'].filter(parent_id=obj_and_query['item_obj'].id),
+                    'invite': obj_and_query['invite_obj'],
+                }
 
     def get(self, request):
         try:
