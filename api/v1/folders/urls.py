@@ -8,7 +8,7 @@ from .views import (
 
 urlpatterns = [
     path('', PostListFolderOrDocumentApi.as_view()),
-    path('detail/<int:id>/', PatchDeleteFolderOrDocumentApi.as_view()),
+    path('detail/<int:pk>/', PatchDeleteFolderOrDocumentApi.as_view()),
     path('move-trash/', MoveToTrashDocumentFolderApi.as_view()),
     path('remove-delete/', RemoveTrashOrDeleteFolderOrDocumentApi.as_view()),
     path('trashed/', TrashedDocumentFolderApi.as_view()),

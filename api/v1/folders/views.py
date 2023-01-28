@@ -80,7 +80,7 @@ class PatchDeleteFolderOrDocumentApi(views.APIView):
 
     def get_queryset(self):
         return FolderOrDocument.objects.select_related('organization', 'creator', 'parent').filter(
-            creator_id=self.request.user.id, organization_id=self.request.user.organization.id
+            creator_id=self.request.user.id, organization_id=self.request.user.organization.id, is_trashed=False
         )
 
     def get_object(self, pk):
@@ -470,12 +470,14 @@ class GetOutsideInvitesApi(views.APIView):
         )
 
     def get_folder_or_document_queryset(self):
+        print('2')
         """ Get FolderOrDocument model """
         return FolderOrDocument.objects.select_related('organization', 'creator', 'parent').filter(
             organization_id=self.request.user.organization.id, is_trashed=False
         )
 
     def get_params(self):
+        print('3')
         params = self.request.query_params
         inviter_id = params.get('inviter_id')
         invite_id = params.get('invite_id')
@@ -498,28 +500,12 @@ class GetOutsideInvitesApi(views.APIView):
             'item_id': item_id,
         }
 
-    def get_given_access_object(self):
-        """ Get GiveAccessToDocumentFolder model object """
-        params = self.get_params()
-        if not params['invite_id']:
-            return None
-        return self.get_given_access_queryset().filter(
-            id=params['invite_id'], user_id=self.request.user.id
-        ).first()
-
-    def get_folder_or_document_object(self):
-        """ Get FolderOrDocument model object """
-        params = self.get_params()
-        if not params['item_id'] and not params['inviter_id']:
-            return None
-        return self.get_folder_or_document_queryset().filter(
-            id=params['item_id'], creator_id=params['inviter_id']
-        ).first()
-
     def get_objects_and_queryset(self):
+        print('6')
+        params = self.get_params()
         folder_or_document = self.get_folder_or_document_queryset()
-        invite_obj = self.get_given_access_object()
-        item_obj = self.get_folder_or_document_object()
+        invite_obj = self.get_given_access_queryset().filter(id=params['invite_id'], user_id=self.request.user.id).first()
+        item_obj = folder_or_document.filter(id=params['item_id'], creator_id=params['inviter_id']).first()
         if not folder_or_document or not invite_obj or not item_obj:
             return None
         return {
@@ -528,23 +514,21 @@ class GetOutsideInvitesApi(views.APIView):
             'item_obj': item_obj,
         }
 
-    def validate_item(self):
-        """ This function validate item is children of folder in the invited object """
-        obj_and_query = self.get_objects_and_queryset()
-        if not obj_and_query:
-            return None
-        if obj_and_query['invite_obj'].folder_or_document.id > obj_and_query['item_obj'].id:
-            return None
-        for f_o_d in obj_and_query['folder_or_document'].filter(
-                id__lte=obj_and_query['item_obj'].id, creator_id=obj_and_query['invite_obj'].creator.id
-        ).order_by('-id'):
-            if f_o_d.id == obj_and_query['invite_obj'].folder_or_document.id:
+    def validate_item(self, access_folder_id: int, item_obj):
+        print('7')
+        """ Validate item object for know this is a child of invite object folder """
+        if item_obj.parent:
+            if item_obj.parent.id < access_folder_id:
+                return False
+            if item_obj.parent.id == access_folder_id:
                 return True
-            if f_o_d.parent_id == obj_and_query['invite_obj'].folder_or_document.id:
-                return True
-            return None
+        if item_obj.parent is None:
+            return False
+        else:
+            return self.validate_item(access_folder_id, item_obj.parent)
 
     def get_filtered_data(self):
+        print('8')
         params = self.get_params()
         if not params:
             return None
@@ -553,15 +537,24 @@ class GetOutsideInvitesApi(views.APIView):
                 'queryset': self.get_given_access_queryset().filter(creator_id=params['inviter_id']),
                 'serializer': ListOutsideGiveAccessToDocumentFolderSerializer
             }
-        validated_item_query = self.validate_item()
-        if not validated_item_query:
-            return None
         obj_and_query = self.get_objects_and_queryset()
-        return {
-            'queryset': obj_and_query['folder_or_document'].filter(parent_id=obj_and_query['item_obj'].id),
-            'serializer': ListFolderOrDocumentSerializer,
-            'invite': obj_and_query['invite_obj'],
-        }
+        if not obj_and_query:
+            return None
+        if obj_and_query['invite_obj'].folder_or_document.id > obj_and_query['item_obj'].id:
+            return None
+        if obj_and_query['invite_obj'].folder_or_document.id == obj_and_query['item_obj'].id:
+            return {
+                'queryset': obj_and_query['folder_or_document'].filter(parent_id=obj_and_query['item_obj'].id),
+                'serializer': ListFolderOrDocumentSerializer,
+                'invite': obj_and_query['invite_obj'],
+            }
+        else:
+            if self.validate_item(obj_and_query['invite_obj'].folder_or_document.id, obj_and_query['item_obj']):
+                return {
+                    'queryset': obj_and_query['folder_or_document'].filter(parent_id=obj_and_query['item_obj'].id),
+                    'serializer': ListFolderOrDocumentSerializer,
+                    'invite': obj_and_query['invite_obj'],
+                }
 
     def get(self, request):
         try:
