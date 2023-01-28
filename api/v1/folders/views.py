@@ -464,7 +464,10 @@ class OutsideInvitesApi(views.APIView):
         """ Get GiveAccessToDocumentFolder model """
         return GiveAccessToDocumentFolder.objects.select_related(
             'organization', 'creator', 'user', 'folder_or_document'
-        ).filter(organization_id=self.request.user.organization.id, user_id=self.request.user.id)
+        ).filter(
+            organization_id=self.request.user.organization.id, user_id=self.request.user.id,
+            folder_or_document__is_trashed=False
+        )
 
     def get_folder_or_document_queryset(self):
         """ Get FolderOrDocument model """
