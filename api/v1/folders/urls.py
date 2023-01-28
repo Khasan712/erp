@@ -16,5 +16,5 @@ urlpatterns = [
     path('give-access/', GiveAccessToDocumentFolderApi.as_view()),
     path('get-users/', FolderDocumentUsersApi.as_view()),
     path('inside-invites/', GetInsideInvitesFolderOrDocument.as_view()),
-    # path('outside-invites/', GetOutsideInvitesApi.as_view()),
+    path('outside-invites/', GetOutsideInvitesApi.as_view()),
 ]
