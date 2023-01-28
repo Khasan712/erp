@@ -336,9 +336,10 @@ class GiveAccessToDocumentFolderApi(views.APIView):
                 return 'Send only user id.'
             return self.get_queryset().filter(creator_id=user.id, user_id=invited_user)
         if outside_user:
-            outside_user = self.validate_email(outside_user)
-            if not outside_user:
+            if not self.validate_email(outside_user):
                 return f"{outside_user} is not valid email"
+            print(outside_user)
+            print(self.get_queryset().filter(creator_id=user.id, out_side_person=outside_user))
             return self.get_queryset().filter(creator_id=user.id, out_side_person=outside_user)
         return 'Send user=`ID` or email=`email` in the params.'
 
