@@ -294,7 +294,7 @@ class GiveAccessToDocumentFolderApi(views.APIView):
     def get_queryset(self):
         queryset = GiveAccessToDocumentFolder.objects.select_related(
             'organization', 'creator', 'user', 'folder_or_document'
-        ).filter(organization_id=self.request.user.organization.id)
+        ).filter(organization_id=self.request.user.organization.id, folder_or_document__is_trashed=False)
         return queryset
 
     def get_object(self):
