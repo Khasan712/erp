@@ -370,7 +370,7 @@ class GiveAccessToDocumentFolderApi(views.APIView):
                             serializer.save(creator_id=creator.id, organization_id=creator.organization.id)
                             folder_or_document_access_notification(creator.id, user, serializer.data.get('id'))
                         if isinstance(user, str):
-                            out_side_person = self.isValid(user)
+                            out_side_person = self.validate_email(user)
                             if not out_side_person:
                                 return f"{user} is not valid email"
                             data = {
@@ -809,7 +809,7 @@ class GetOutsideFolderOrDocument(views.APIView):
             'organization', 'creator', 'user', 'folder_or_document'
         ).filter(organization_id=self.request.user.organization.id)
 
-    def isValid(self, email):
+    def validate_email(self, email):
         regex = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
         if re.fullmatch(regex, email):
             return True
@@ -825,7 +825,7 @@ class GetOutsideFolderOrDocument(views.APIView):
             return None
         try:
             invite_id = int(invite_id)
-            if self.isValid(invited_user):
+            if self.validate_email(invited_user):
                 invited_user = invited_user
             else:
                 invited_user = int(invited_user)
