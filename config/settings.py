@@ -282,8 +282,8 @@ EMAIL_HOST_PASSWORD = os.environ['EMAIL_HOST_PASSWORD']
 
 
 # Redis conf
-# REDIS_HOST = 'redis'
-REDIS_HOST = '0.0.0.0'
+REDIS_HOST = 'redis'
+# REDIS_HOST = '0.0.0.0'
 REDIS_PORT = '6379'
 
 # Celery conf

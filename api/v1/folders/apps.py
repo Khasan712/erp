@@ -7,9 +7,4 @@ class FoldersConfig(AppConfig):
     label = 'folders'
 
     def ready(self):
-        try:
-            from . import (
-                signals,
-            )
-        except ImportError:
-            pass
+        from . import signals, handlers # noqa
