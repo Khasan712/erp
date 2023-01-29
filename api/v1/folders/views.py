@@ -1049,6 +1049,16 @@ class SharedLinkAPi(views.APIView):
             if not validate_item:
                 return Response(object_not_found_response(), status=status.HTTP_400_BAD_REQUEST)
             item_obj = self.check_item_id()
+            token = self.check_token()
+            if not token.editable:
+                return Response(
+                    {
+                        'success': False,
+                        'message': 'Yo do not have access to perform this action.',
+                        'error': 'Error occurred',
+                        'data': []
+                    }
+                )
             serializer = GetSharedLinkDocumentOrFolderSerializer(item_obj, data=self.request.data, partial=True)
             if not serializer.is_valid():
                 return Response(not_serializer_is_valid(serializer), status=status.HTTP_400_BAD_REQUEST)
