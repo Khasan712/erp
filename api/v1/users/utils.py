@@ -1,4 +1,6 @@
 from django.core.mail import EmailMessage, EmailMultiAlternatives
+from django.db import transaction
+
 from api.v1.sourcing.models import SourcingRequestEvent
 from django.conf import settings
 from api.v1.users.models import User
@@ -21,8 +23,25 @@ class Utils:
             to=[user_data.get('email')],
         )
         email.send()
-        
-        
+
+    @staticmethod
+    def send_shared_link_email(token_and_emails):
+        with transaction.atomic():
+            for token_and_email in token_and_emails:
+                button_style = f"display: inline-block; text-decoration: none; color: white; padding: 20px 50px; " \
+                              f"background-color: blue; border-radius: 10px;"
+                html_content = f"<a style={button_style} href='www.jmb-inventory-system.com/shared-link/" \
+                               f"token={token_and_email.get('token')}'><button>Folder Or Document</button></a>"
+                subject = "You have access for document or folder"
+                email = EmailMessage(
+                    subject=subject,
+                    body=f'Click the button for see items. \n{html_content}',
+                    to=[token_and_email.get('email')],
+                )
+                email.content_subtype = 'html'
+                email.send()
+
+
 def send_message_to_suppliers(request, suppliers, sourcing_event):
     sourcing_event = SourcingRequestEvent.objects.get(id=sourcing_event)
     current_site = get_current_site(request).domain

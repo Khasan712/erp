@@ -294,6 +294,9 @@ CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 
+# CELERY_IMPORTS = (
+#     'api.v1.chat.tasks',
+# )
 
 CHANNEL_LAYERS = {
     "default": {

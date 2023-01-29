@@ -14,12 +14,13 @@ from .serializers import (
     UpdateGiveAccessToDocumentFolderSerializer, UsersGiveAccessToDocumentFolderSerializer,
     ListOutsideGiveAccessToDocumentFolderSerializer, UpdateOutsideInvitesDocumentFolderSerializer,
     GetSharedLinkInviteSerializer, GetSharedLinkDocumentOrFolderSerializer,
+    ShareLinkGiveAccessToDocumentFolderSerializer,
 )
 from api.v1.users.models import User
 from .models import (
     FolderOrDocument, GiveAccessToDocumentFolder,
 )
-from ..chat.tasks import folder_or_document_access_notification
+from ..chat.tasks import folder_or_document_access_notification, send_shared_link_email
 from ..commons.pagination import make_pagination
 from ..commons.views import (
     exception_response, not_serializer_is_valid, serializer_valid_response, object_deleted_response,
@@ -28,6 +29,7 @@ from ..commons.views import (
 from ..users.permissions import IsSourcingDirector, IsContractAdministrator
 from ..users.serializers import UserUpdateSerializer, FolderDocumentUsersSerializer
 from ..users.services import make_errors
+from ..users.utils import Utils
 
 
 class PostListFolderOrDocumentApi(views.APIView):
@@ -353,6 +355,7 @@ class GiveAccessToDocumentFolderApi(views.APIView):
                 if not folder_document:
                     return f'{folder_or_document} is not valid document or folder.'
                 with transaction.atomic():
+                    shared_link_emails = []
                     for user in users:
                         if isinstance(user, int):
                             user_obj = User.objects.filter(id=user).first()
@@ -379,12 +382,18 @@ class GiveAccessToDocumentFolderApi(views.APIView):
                                 'editable': editable,
                                 'expiration_date': expiration_date,
                             }
-                            serializer = GiveAccessToDocumentFolderSerializer(data=data)
+                            serializer = ShareLinkGiveAccessToDocumentFolderSerializer(data=data)
                             if not serializer.is_valid():
                                 return make_errors(serializer.errors)
                             serializer.save(creator_id=creator.id, organization_id=creator.organization.id)
-                        # else:
-                        #     return f'user {user} is not valid type. id - int or email - str.'
+                            token_and_email = {
+                                'token': serializer.data.get('access_code'),
+                                'email': serializer.data.get('out_side_person')
+                            }
+                            shared_link_emails.append(token_and_email)
+                    if shared_link_emails:
+                        send_shared_link_email(shared_link_emails)
+
 
         return True
 
@@ -1042,9 +1051,6 @@ class SharedLinkAPi(views.APIView):
 
     def patch(self, request):
         try:
-            params = self.get_params()
-            if not params or not params['item_id']:
-                return Response(object_not_found_response(), status=status.HTTP_400_BAD_REQUEST)
             validate_item = self.validate_item()
             if not validate_item:
                 return Response(object_not_found_response(), status=status.HTTP_400_BAD_REQUEST)

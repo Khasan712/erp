@@ -68,6 +68,12 @@ class GiveAccessToDocumentFolderSerializer(serializers.ModelSerializer):
         fields = ('id', 'user', 'folder_or_document', 'out_side_person', 'editable', 'expiration_date')
 
 
+class ShareLinkGiveAccessToDocumentFolderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GiveAccessToDocumentFolder
+        fields = ('id', 'folder_or_document', 'out_side_person', 'editable', 'expiration_date', 'access_code')
+
+
 class UpdateGiveAccessToDocumentFolderSerializer(serializers.ModelSerializer):
     class Meta:
         model = GiveAccessToDocumentFolder
