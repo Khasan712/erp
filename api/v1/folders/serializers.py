@@ -162,7 +162,7 @@ class ListOutsideGiveAccessToDocumentFolderSerializer(serializers.ModelSerialize
 class SharedLinkListSerializer(serializers.ModelSerializer):
     class Meta:
         model = GiveAccessToDocumentFolder
-        fields = ('id', 'user', 'folder_or_document', 'editable', 'expiration_date')
+        fields = ('id', 'user', 'folder_or_document', 'editable', 'expiration_date', 'access_code')
 
     def to_representation(self, instance):
         response = super().to_representation(instance)
