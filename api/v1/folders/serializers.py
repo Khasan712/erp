@@ -189,3 +189,8 @@ class GetSharedLinkDocumentOrFolderSerializer(serializers.ModelSerializer):
         model = FolderOrDocument
         fields = ('id', 'name', 'document')
 
+
+class GiveAccessCartSharedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GiveAccessCart
+        fields = ('id', 'creator', 'out_side_person', 'created_at')

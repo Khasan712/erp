@@ -14,11 +14,11 @@ from .serializers import (
     UpdateGiveAccessToDocumentFolderSerializer, UsersGiveAccessToDocumentFolderSerializer,
     ListOutsideGiveAccessToDocumentFolderSerializer, UpdateOutsideInvitesDocumentFolderSerializer,
     GetSharedLinkInviteSerializer, GetSharedLinkDocumentOrFolderSerializer,
-    ShareLinkGiveAccessToDocumentFolderSerializer,
+    ShareLinkGiveAccessToDocumentFolderSerializer, GiveAccessCartSharedSerializer,
 )
 from api.v1.users.models import User
 from .models import (
-    FolderOrDocument, GiveAccessToDocumentFolder,
+    FolderOrDocument, GiveAccessToDocumentFolder, GiveAccessCart,
 )
 from ..chat.tasks import folder_or_document_access_notification, send_shared_link_email
 from ..commons.pagination import make_pagination
@@ -350,51 +350,58 @@ class GiveAccessToDocumentFolderApi(views.APIView):
         with transaction.atomic():
             creator = self.request.user
             documents_and_folders = FolderOrDocument.objects.select_related('organization', 'creator', 'parent')
-            for folder_or_document in folders_or_documents:
-                folder_document = documents_and_folders.filter(id=folder_or_document).first()
-                if not folder_document:
-                    return f'{folder_or_document} is not valid document or folder.'
-                with transaction.atomic():
-                    shared_link_emails = []
-                    for user in users:
-                        if isinstance(user, int):
-                            user_obj = User.objects.filter(id=user).first()
-                            if not user_obj:
-                                return f'{user} is not valid user id.'
-                            data = {
-                                'user': user,
-                                'folder_or_document': folder_or_document,
-                                'editable': editable,
-                                'expiration_date': expiration_date,
-                            }
-                            serializer = GiveAccessToDocumentFolderSerializer(data=data)
-                            if not serializer.is_valid():
-                                return make_errors(serializer.errors)
-                            serializer.save(creator_id=creator.id, organization_id=creator.organization.id)
-                            folder_or_document_access_notification(creator.id, user, serializer.data.get('id'))
-                        if isinstance(user, str):
-                            out_side_person = self.validate_email(user)
-                            if not out_side_person:
-                                return f"{user} is not valid email"
-                            data = {
-                                'out_side_person': user,
-                                'folder_or_document': folder_or_document,
-                                'editable': editable,
-                                'expiration_date': expiration_date,
-                            }
-                            serializer = ShareLinkGiveAccessToDocumentFolderSerializer(data=data)
-                            if not serializer.is_valid():
-                                return make_errors(serializer.errors)
-                            serializer.save(creator_id=creator.id, organization_id=creator.organization.id)
-                            token_and_email = {
-                                'token': serializer.data.get('access_code'),
-                                'email': serializer.data.get('out_side_person')
-                            }
-                            shared_link_emails.append(token_and_email)
-                    if shared_link_emails:
-                        send_shared_link_email(shared_link_emails)
-
-
+            users_obj = User.objects.select_related('organization')
+            email_and_tokens = []
+            for user in users:
+                if isinstance(user, str):
+                    out_side_person = self.validate_email(user)
+                    if not out_side_person:
+                        raise f"{user} is not valid email"
+                    access_cart = GiveAccessCart.objects.create(
+                        organization_id=creator.organization.id,
+                        creator_id=creator.id,
+                        out_side_person=user
+                    )
+                    token_and_email = {
+                        'token': access_cart.access_code,
+                        'email': access_cart.out_side_person
+                    }
+                    email_and_tokens.append(token_and_email)
+                for folder_or_document in folders_or_documents:
+                    folder_document = documents_and_folders.filter(id=folder_or_document).first()
+                    if not folder_document:
+                        raise f'{folder_or_document} is not valid document or folder.'
+                    if isinstance(user, int):
+                        user_obj = users_obj.filter(id=user).first()
+                        if not user_obj:
+                            raise ValidationError(message=f'{user} is not valid user id.')
+                        data = {
+                            'user': user,
+                            'folder_or_document': folder_or_document,
+                            'editable': editable,
+                            'expiration_date': expiration_date,
+                        }
+                        serializer = GiveAccessToDocumentFolderSerializer(data=data)
+                        if not serializer.is_valid():
+                            return make_errors(serializer.errors)
+                        serializer.save(creator_id=creator.id, organization_id=creator.organization.id)
+                        folder_or_document_access_notification(creator.id, user, serializer.data.get('id'))
+                    if isinstance(user, str):
+                        data = {
+                            'out_side_person': user,
+                            'folder_or_document': folder_or_document,
+                            'editable': editable,
+                            'expiration_date': expiration_date,
+                        }
+                        serializer = ShareLinkGiveAccessToDocumentFolderSerializer(data=data)
+                        if not serializer.is_valid():
+                            return make_errors(serializer.errors)
+                        serializer.save(
+                            creator_id=creator.id, organization_id=creator.organization.id,
+                            shared_link_cart_id=access_cart.id
+                        )
+            if token_and_email:
+                send_shared_link_email(token_and_email)
         return True
 
     def post(self, request):
@@ -955,9 +962,20 @@ class SharedLinkAPi(views.APIView):
     def get_given_access_queryset(self):
         return GiveAccessToDocumentFolder.objects.select_related('organization', 'creator', 'user', 'folder_or_document')
 
+    def give_access_cart_queryset(self):
+        return GiveAccessCart.objects.select_related('organization', 'creator')
+
+    def get_user_queryset(self):
+        return User.objects.select_related('organization').filter(
+            cart_creator__out_side_person=self.check_token().out_side_person
+        )
+
+
     def get_params(self):
         params = self.request.query_params
         token = params.get('token')
+        method = params.get('method')
+        user_carts = params.get('user_carts')
         item_id = params.get('item_id')
         if not token:
             return None
@@ -969,6 +987,8 @@ class SharedLinkAPi(views.APIView):
         return {
             'token': token,
             'item_id': item_id,
+            'method': method,
+            'user_carts': user_carts,
         }
 
     def check_token(self):
@@ -1032,6 +1052,15 @@ class SharedLinkAPi(views.APIView):
             invite_obj = self.check_token()
             if not params:
                 return Response(object_not_found_response(), status=status.HTTP_400_BAD_REQUEST)
+            if params.get('method') == 'main_page':
+                users = self.get_user_queryset().distict()
+                serializer = FolderDocumentUsersSerializer
+                return Response(make_pagination(request, serializer, users), status=status.HTTP_200_OK)
+            if params.get('user_carts'):
+                inviter = self.get_user_queryset().get(id=int(params.get('user_carts')))
+                inviter_shared_links = self.give_access_cart_queryset().filter(creator_id=inviter.id)
+                serializer = GiveAccessCartSharedSerializer
+                return Response(make_pagination(request, serializer, inviter_shared_links), status=status.HTTP_200_OK)
             if not params['item_id']:
                 serializer = GetSharedLinkInviteSerializer(invite_obj)
                 return Response(serializer_valid_response(serializer), status=status.HTTP_200_OK)

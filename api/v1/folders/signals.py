@@ -2,7 +2,8 @@ from django.db import transaction
 from django.db.models.signals import post_save, pre_delete, pre_save
 from django.dispatch import receiver
 from .models import (
-    GiveAccessToDocumentFolder
+    GiveAccessToDocumentFolder,
+    GiveAccessCart
 )
 from datetime import datetime
 import uuid
@@ -21,6 +22,13 @@ def give_access_for_user(document_folder: int, users: list):
 
 @receiver(post_save, sender=GiveAccessToDocumentFolder)
 def folder_post_save_signal(sender, instance, created, **kwargs):
+    if created:
+        instance.access_code = uuid.uuid4()
+        instance.save()
+
+
+@receiver(post_save, sender=GiveAccessCart)
+def shared_link_cart(sender, instance, created, **kwargs):
     if created:
         instance.access_code = uuid.uuid4()
         instance.save()

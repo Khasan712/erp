@@ -304,8 +304,6 @@ class ContractDetailView(APIView):
                     serializer.save()
                 else:
                     pass
-            
-                
 
     def get(self, request):
         try:
@@ -410,8 +408,8 @@ class ProcessContractTaskView(APIView):
 class ContractFileUpload(generics.UpdateAPIView):
     queryset = Contract.objects.select_related('parent_agreement', 'departement', 'category', 'currency', 'organization', 'create_by', 'supplier')
     serializer_class = ContractFileUploadSerializer
-    
-    def patch(self, request, pk, *args, **kwargs):
+
+    def patch(self, request, pk):
         item = Contract.objects.get(id=pk)
         item.document = request.data.get('document')
         item.save()

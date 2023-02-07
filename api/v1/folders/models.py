@@ -28,11 +28,23 @@ class FolderOrDocument(models.Model):
         return super().save(*args, **kwargs)
 
 
+class GiveAccessCart(models.Model):
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
+    creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cart_creator')
+    out_side_person = models.EmailField(max_length=250, unique=True)
+    access_code = models.CharField(max_length=100, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.creator} {self.out_side_person}"
+
+
 class GiveAccessToDocumentFolder(models.Model):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='access_creator')
     user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True, related_name='access_user')
     folder_or_document = models.ForeignKey(FolderOrDocument, on_delete=models.CASCADE, related_name='access_item')
+    shared_link_cart = models.ForeignKey(GiveAccessCart, on_delete=models.CASCADE, blank=True, null=True)
     out_side_person = models.EmailField(max_length=250, blank=True, null=True)
     access_code = models.CharField(max_length=100, blank=True, null=True)
     editable = models.BooleanField(default=False)
