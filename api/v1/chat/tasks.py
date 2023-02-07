@@ -32,7 +32,8 @@ def send_shared_link_email(token_and_emails):
             button_style = f"display: inline-block; text-decoration: none; color: white; padding: 20px 50px; " \
                           f"background-color: blue; border-radius: 10px;"
             html_content = f"<a style={button_style} href='www.jmb-inventory-system.com/shared-link/" \
-                           f"?token={token_and_email.get('token')}'><button>Folder Or Document</button></a>"
+                           f"?token={token_and_email.get('token')}&{token_and_email.get('cart_id')}'>" \
+                           f"<button>Folder Or Document</button></a>"
             subject = "You have access for document or folder"
             email = EmailMessage(
                 subject=subject,

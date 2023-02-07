@@ -398,7 +398,8 @@ class GiveAccessToDocumentFolderApi(views.APIView):
                 if isinstance(user, str):
                     token_and_email = {
                         'token': access_cart.access_code,
-                        'email': user
+                        'email': user,
+                        'cart_id': access_cart.id
                     }
                     email_and_tokens.append(token_and_email)
             if token_and_email:
