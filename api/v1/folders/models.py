@@ -31,7 +31,7 @@ class FolderOrDocument(models.Model):
 class GiveAccessCart(models.Model):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cart_creator')
-    out_side_person = models.EmailField(max_length=250, unique=True)
+    out_side_person = models.EmailField(max_length=250, blank=True, null=True)
     access_code = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

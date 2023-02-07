@@ -362,11 +362,6 @@ class GiveAccessToDocumentFolderApi(views.APIView):
                         creator_id=creator.id,
                         out_side_person=user
                     )
-                    token_and_email = {
-                        'token': access_cart.access_code,
-                        'email': access_cart.out_side_person
-                    }
-                    email_and_tokens.append(token_and_email)
                 for folder_or_document in folders_or_documents:
                     folder_document = documents_and_folders.filter(id=folder_or_document).first()
                     if not folder_document:
@@ -400,8 +395,14 @@ class GiveAccessToDocumentFolderApi(views.APIView):
                             creator_id=creator.id, organization_id=creator.organization.id,
                             shared_link_cart_id=access_cart.id
                         )
+                if isinstance(user, str):
+                    token_and_email = {
+                        'token': access_cart.access_code,
+                        'email': user
+                    }
+                    email_and_tokens.append(token_and_email)
             if token_and_email:
-                send_shared_link_email(token_and_email)
+                send_shared_link_email(email_and_tokens)
         return True
 
     def post(self, request):
