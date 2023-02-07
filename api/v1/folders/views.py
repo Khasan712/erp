@@ -14,7 +14,7 @@ from .serializers import (
     UpdateGiveAccessToDocumentFolderSerializer, UsersGiveAccessToDocumentFolderSerializer,
     ListOutsideGiveAccessToDocumentFolderSerializer, UpdateOutsideInvitesDocumentFolderSerializer,
     GetSharedLinkInviteSerializer, GetSharedLinkDocumentOrFolderSerializer,
-    ShareLinkGiveAccessToDocumentFolderSerializer, GiveAccessCartSharedSerializer,
+    ShareLinkGiveAccessToDocumentFolderSerializer, GiveAccessCartSharedSerializer, SharedLinkListSerializer,
 )
 from api.v1.users.models import User
 from .models import (
@@ -1075,7 +1075,7 @@ class SharedLinkAPi(views.APIView):
                 return Response(make_pagination(request, serializer, inviter_shared_links), status=status.HTTP_200_OK)
             if params.get('cart_id'):
                 folders = self.get_given_access_queryset().filter(shared_link_cart_id=int(params.get('cart_id')))
-                serializer = GetSharedLinkInviteSerializer
+                serializer = SharedLinkListSerializer
                 return Response(make_pagination(request, serializer, folders), status=status.HTTP_200_OK)
             if not params['item_id']:
                 serializer = GetSharedLinkInviteSerializer(invite_obj)
