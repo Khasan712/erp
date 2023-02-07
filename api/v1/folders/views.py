@@ -1058,7 +1058,7 @@ class SharedLinkAPi(views.APIView):
             if not params:
                 return Response(object_not_found_response(), status=status.HTTP_400_BAD_REQUEST)
             if params.get('method') == 'main_page':
-                users = self.get_user_queryset().distict()
+                users = self.get_user_queryset().distinct()
                 serializer = FolderDocumentUsersSerializer
                 return Response(make_pagination(request, serializer, users), status=status.HTTP_200_OK)
             if params.get('user_carts'):
