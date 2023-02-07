@@ -968,7 +968,7 @@ class SharedLinkAPi(views.APIView):
 
     def get_user_queryset(self):
         return User.objects.select_related('organization').filter(
-            cart_creator__out_side_person=self.check_token().out_side_person
+            cart_creator__out_side_person=self.get_cart().out_side_person
         )
 
 
@@ -991,6 +991,10 @@ class SharedLinkAPi(views.APIView):
             'method': method,
             'user_carts': user_carts,
         }
+
+    def get_cart(self):
+        token = self.get_params().get('token')
+        return GiveAccessCart.objects.select_related('organization', 'creator').filter(access_code=token).first()
 
     def check_token(self):
         params = self.get_params()
