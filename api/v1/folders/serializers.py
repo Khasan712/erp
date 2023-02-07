@@ -1,7 +1,12 @@
 from rest_framework import serializers
 from .models import (
     FolderOrDocument,
+<<<<<<< HEAD
     GiveAccessToDocumentFolder, GiveAccessCart,
+=======
+    GiveAccessToDocumentFolder,
+    GiveAccessCart
+>>>>>>> d28a89a (..)
 )
 
 
