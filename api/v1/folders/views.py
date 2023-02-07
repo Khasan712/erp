@@ -978,6 +978,7 @@ class SharedLinkAPi(views.APIView):
         method = params.get('method')
         user_carts = params.get('user_carts')
         item_id = params.get('item_id')
+        cart_id = params.get('cart_id')
         if not token:
             return None
         if item_id:
@@ -985,11 +986,17 @@ class SharedLinkAPi(views.APIView):
                 item_id = int(item_id)
             except ValueError:
                 return None
+        if cart_id:
+            try:
+                cart_id = int(cart_id)
+            except ValueError:
+                return None
         return {
             'token': token,
             'item_id': item_id,
             'method': method,
             'user_carts': user_carts,
+            'cart_id': cart_id,
         }
 
     def get_cart(self):
