@@ -972,7 +972,6 @@ class SharedLinkAPi(views.APIView):
             cart_creator__out_side_person=self.get_cart().out_side_person
         )
 
-
     def get_params(self):
         params = self.request.query_params
         token = params.get('token')
@@ -1096,6 +1095,7 @@ class SharedLinkAPi(views.APIView):
             return Response(response, status=status.HTTP_200_OK)
 
     def patch(self, request):
+        """ Item_id and  """
         try:
             validate_item = self.validate_item()
             if not validate_item:
