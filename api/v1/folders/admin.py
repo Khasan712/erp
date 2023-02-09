@@ -2,8 +2,10 @@ from django.contrib import admin
 from .models import (
     FolderOrDocument,
     GiveAccessToDocumentFolder,
+    GiveAccessCart
 )
 
+admin.site.register(GiveAccessCart)
 
 @admin.register(FolderOrDocument)
 class FolderOrDocumentAdmin(admin.ModelAdmin):
