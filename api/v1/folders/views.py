@@ -992,6 +992,11 @@ class SharedLinkAPi(views.APIView):
                 cart_id = int(cart_id)
             except ValueError:
                 return None
+        if user_carts:
+            try:
+                user_carts = int(user_carts)
+            except ValueError:
+                return None
         return {
             'token': token,
             'item_id': item_id,
@@ -1070,7 +1075,7 @@ class SharedLinkAPi(views.APIView):
                 serializer = FolderDocumentUsersSerializer
                 return Response(make_pagination(request, serializer, users), status=status.HTTP_200_OK)
             if params.get('user_carts'):
-                inviter = self.get_user_queryset().get(id=int(params.get('user_carts')))
+                inviter = self.get_user_queryset().filter(id=params.get('user_carts')).first()
                 inviter_shared_links = self.give_access_cart_queryset().filter(creator_id=inviter.id)
                 serializer = GiveAccessCartSharedSerializer
                 return Response(make_pagination(request, serializer, inviter_shared_links), status=status.HTTP_200_OK)
