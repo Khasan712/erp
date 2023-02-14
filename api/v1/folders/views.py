@@ -1076,7 +1076,9 @@ class SharedLinkAPi(views.APIView):
                 return Response(make_pagination(request, serializer, users), status=status.HTTP_200_OK)
             if params.get('user_carts'):
                 inviter = self.get_user_queryset().filter(id=params.get('user_carts')).first()
-                inviter_shared_links = self.give_access_cart_queryset().filter(creator_id=inviter.id)
+                inviter_shared_links = self.give_access_cart_queryset().filter(
+                    creator_id=inviter.id, out_side_person=invite_obj.out_side_person
+                )
                 serializer = GiveAccessCartSharedSerializer
                 return Response(make_pagination(request, serializer, inviter_shared_links), status=status.HTTP_200_OK)
             if params.get('cart_id'):
