@@ -959,6 +959,7 @@ class GetOutsideFolderOrDocument(views.APIView):
 
 
 class SharedLinkAPi(views.APIView):
+    permission_classes = (permissions.AllowAny, )
     """ This api for users who have received share ink email message """
 
     def get_given_access_queryset(self):
