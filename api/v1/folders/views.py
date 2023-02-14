@@ -965,6 +965,9 @@ class SharedLinkAPi(views.APIView):
     def get_given_access_queryset(self):
         return GiveAccessToDocumentFolder.objects.select_related('organization', 'creator', 'user', 'folder_or_document')
 
+    def get_cart_queryset(self):
+        return GiveAccessCart.objects.select_related('organization', 'creator')
+
     def give_access_cart_queryset(self):
         return GiveAccessCart.objects.select_related('organization', 'creator')
 
@@ -1010,6 +1013,15 @@ class SharedLinkAPi(views.APIView):
         return GiveAccessCart.objects.select_related('organization', 'creator').filter(access_code=token).first()
 
     def check_token(self):
+        params = self.get_params()
+        if not params:
+            return None
+        given_access_queryset = self.get_given_access_queryset().filter(access_code=params['token']).first()
+        if not given_access_queryset:
+            return None
+        return given_access_queryset
+
+    def cart_token(self):
         params = self.get_params()
         if not params:
             return None
@@ -1077,7 +1089,7 @@ class SharedLinkAPi(views.APIView):
             if params.get('user_carts'):
                 inviter = self.get_user_queryset().filter(id=params.get('user_carts')).first()
                 inviter_shared_links = self.give_access_cart_queryset().filter(
-                    creator_id=inviter.id, out_side_person=invite_obj.out_side_person
+                    creator_id=inviter.id, out_side_person=self.get_cart().out_side_person
                 )
                 serializer = GiveAccessCartSharedSerializer
                 return Response(make_pagination(request, serializer, inviter_shared_links), status=status.HTTP_200_OK)
