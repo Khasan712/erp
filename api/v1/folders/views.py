@@ -402,7 +402,7 @@ class GiveAccessToDocumentFolderApi(views.APIView):
                         'cart_id': access_cart.id
                     }
                     email_and_tokens.append(token_and_email)
-            if token_and_email:
+            if email_and_tokens:
                 send_shared_link_email(email_and_tokens)
         return True
 
