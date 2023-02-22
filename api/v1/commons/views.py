@@ -16,6 +16,10 @@ def get_serializer_errors(serializer):
     raise ValidationError(message=f'{make_errors(serializer.errors)}')
 
 
+def return_serializer_errors(serializer):
+    return make_errors(serializer.errors)
+
+
 def not_serializer_is_valid(serializer):
     return {
         "success": False,

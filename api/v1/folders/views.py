@@ -489,14 +489,12 @@ class GetOutsideInvitesApi(views.APIView):
         )
 
     def get_folder_or_document_queryset(self):
-        print('2')
         """ Get FolderOrDocument model """
         return FolderOrDocument.objects.select_related('organization', 'creator', 'parent').filter(
             organization_id=self.request.user.organization.id, is_trashed=False
         )
 
     def get_params(self):
-        print('3')
         params = self.request.query_params
         inviter_id = params.get('inviter_id')
         invite_id = params.get('invite_id')

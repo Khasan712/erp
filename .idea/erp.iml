@@ -14,7 +14,7 @@
       <excludeFolder url="file://$MODULE_DIR$/static" />
       <excludeFolder url="file://$MODULE_DIR$/staticfiles" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.10 (env) (4)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.10 (erp)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="PyDocumentationSettings">

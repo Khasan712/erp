@@ -53,7 +53,7 @@ class ConsultantPostListSerializers(serializers.ModelSerializer):
     class Meta:
         model = Consultant
         fields = ('id', 'f_n', 'l_n', 'email', 'c_start_d', 'c_end_d', 'paymentFor', 'must_increase', 'increasePayTerms',
-                  'growthPercentage', 'frequency',)
+                  'growthPercentage', 'frequency', 'how_many_times')
 
 
 class ServiceCommodityConsultantPricePostSerializers(serializers.ModelSerializer):

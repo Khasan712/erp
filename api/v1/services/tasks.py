@@ -20,6 +20,7 @@ import datetime
 
 
 def get_increase_date(increase_term, how_many_times):
+    print(how_many_times)
     match increase_term:
         case 'weekly':
             return datetime.timedelta(weeks=how_many_times)
@@ -68,6 +69,7 @@ def create_first_increase_terms(
         case 'consultant':
             service_term.forConsultant_id = pk
             service_term.increaseDay = datetime.datetime.today() + get_increase_date(terms, how_many_times)
+            print("????????????????????????")
             service_term.new_price = ((current_price * percentage) / 100) + current_price
     service_term.save()
 

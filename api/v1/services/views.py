@@ -10,7 +10,7 @@ from api.v1.commons.views import (
     exception_response,
     object_not_found_response,
     object_deleted_response,
-    get_serializer_valid_response
+    get_serializer_valid_response, return_serializer_errors
 )
 from api.v1.services.serializers import (
     ServiceSerializer, ServiceCommodityPostSerializers, CommodityPostSerializers,
@@ -58,10 +58,14 @@ class ServicePostListAPIView(APIView):
                             raise ValidationError(message=f'{make_errors(commodity_serializer.errors)}')
                         commodity_serializer.save(service_id=serializer.data.get('id'))
                 if service_price is not None:
-                    service_price_serializer = ServiceCommodityConsultantPricePostSerializers(data={'price': service_price})
+                    service_price_serializer = ServiceCommodityConsultantPricePostSerializers(
+                        data={'price': service_price}
+                    )
                     if not service_price_serializer.is_valid():
                         raise ValidationError(message=f'{make_errors(service_price_serializer.errors)}')
-                    service_price_serializer.save(organization_id=user.organization.id, forService_id=serializer.data.get('id'))
+                    service_price_serializer.save(
+                        organization_id=user.organization.id, forService_id=serializer.data.get('id')
+                    )
                 if serializer.data.get('must_increase'):
                     if service_price is None:
                         raise ValidationError(message='Please enter service price!')
@@ -261,7 +265,6 @@ class CommodityPostListAPIView(APIView):
                         raise ValidationError(message=f'{make_errors(commodity_price_serializer.errors)}')
                     commodity_price_serializer.save(organization_id=user.organization.id, forCommodity_id=serializer.data.get('id'))
                 if serializer.data.get('must_increase'):
-                    print(serializer.data.get('how_many_times'))
                     if commodity_price is None:
                         raise ValidationError(message='Please enter service price!')
                     create_first_increase_terms(
@@ -434,19 +437,29 @@ class ConsultantPostListAPIView(APIView):
             with transaction.atomic():
                 serializer = ConsultantPostListSerializers(data=consultant_request)
                 if not serializer.is_valid():
-                    get_serializer_errors(serializer)
+                    raise ValidationError(return_serializer_errors(serializer))
                 serializer.save(organization_id=self.request.user.organization.pk, creator_id=self.request.user.pk)
-                if serializer.data.get('must_increase'):
-                    create_first_increase_terms(
-                        user.organization.id, serializer.data.get('id'), consultant_price,
-                        serializer.data.get('growthPercentage'), serializer.data.get('increasePayTerms'), 'consultant')
-                else:
+                if consultant_price:
                     consultant_price_serializer = ServiceCommodityConsultantPricePostSerializers(
                         data={'price': consultant_price})
                     if not consultant_price_serializer.is_valid():
                         raise ValidationError(message=f'{make_errors(consultant_price_serializer.errors)}')
                     consultant_price_serializer.save(organization_id=user.organization.id,
                                                      forConsultant_id=serializer.data.get('id'))
+
+                if serializer.data.get('must_increase'):
+                    if consultant_price is None:
+                        raise ValidationError(message='Please enter Consultant price!')
+                    create_first_increase_terms(
+                        organization_id=user.organization.id,
+                        pk=serializer.data.get('id'),
+                        current_price_id=consultant_price_serializer.data.get('id'),
+                        current_price=consultant_price_serializer.data.get('price'),
+                        percentage=serializer.data.get('growthPercentage'),
+                        terms=serializer.data.get('increasePayTerms'),
+                        how_many_times=serializer.data.get('how_many_times'),
+                        section='consultant'
+                    )
         except Exception as e:
             return Response(
                 exception_response(e), status=status.HTTP_400_BAD_REQUEST
