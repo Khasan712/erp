@@ -57,7 +57,7 @@ from .serializers import (
 from api.v1.users.permissions import (
     IsSupplier,
     IsCategoryManager,
-    IsSourcingDirector, IsContractAdministrator,
+    IsSourcingDirector, IsContractAdministrator, IsSourcingAdministrator
 )
 from api.v1.chat.views import (
     send_result_notification
@@ -142,7 +142,7 @@ class CategoryRequestListAPIView(generics.ListAPIView):
 class SourcingRequestView(APIView):
     parser_classes = (FormParser, MultiPartParser, JSONParser)
     # parser_class = (FileUploadParser,)
-    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator)
+    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator | IsSourcingAdministrator)
 
     def get_queryset(self):
         user = self.request.user
@@ -310,7 +310,7 @@ class SourcingRequestView(APIView):
 
 
 class SourcingRequestEventView(APIView):
-    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator)
+    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator | IsSourcingAdministrator)
 
     def get_queryset(self):
         sourcing_request_id = self.request.query_params.get('sourcing_request')
@@ -452,7 +452,7 @@ class SourcingRequestEventView(APIView):
 
 
 class SourcingEventGetByParamsAPIView(APIView):
-    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator | IsSupplier)
+    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator | IsSupplier | IsSourcingAdministrator)
 
     def get_queryset(self):
         sourcing_events = SourcingRequestEvent.objects.select_related('sourcing_request', 'creator', 'parent').filter(
@@ -589,7 +589,7 @@ class SourcingEventGetByParamsAPIView(APIView):
 
 
 class SourcingRequestEventDetailView(APIView):
-    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector)
+    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector | IsSourcingAdministrator)
 
     def get_queryset(self):
         queryset = SourcingRequestEvent.objects.select_related('sourcing_request', 'creator', 'parent').filter(
@@ -1049,7 +1049,7 @@ class MassDownload(APIView):
 
 
 class SourcingRequestStatusStatisticsView(APIView):
-    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector)
+    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector | IsSourcingAdministrator)
 
     def get(self, request):
         try:
