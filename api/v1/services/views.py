@@ -27,13 +27,13 @@ from api.v1.services.tasks import (
     create_first_increase_terms,
     check_organization_service_commodity_consultant_status
 )
-from api.v1.users.permissions import IsSourcingDirector, IsContractAdministrator
+from api.v1.users.permissions import IsSourcingDirector, IsContractAdministrator, IsCategoryManager
 from api.v1.users.services import make_errors
 from django.core.exceptions import ValidationError
 
 
 class ServicePostListAPIView(APIView):
-    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator)
+    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator | IsCategoryManager)
 
     def get_queryset(self):
         queryset = Service.objects.select_related('organization', 'creator').filter(
@@ -117,7 +117,7 @@ class ServicePostListAPIView(APIView):
 
 
 class ServiceDetailAPIView(APIView):
-    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator)
+    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator | IsCategoryManager)
 
     def get_queryset(self):
         queryset = Service.objects.select_related('organization', 'creator').filter(
@@ -234,7 +234,7 @@ class ServiceDetailAPIView(APIView):
 
 
 class CommodityPostListAPIView(APIView):
-    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator)
+    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator | IsCategoryManager)
 
     def get_queryset(self):
         queryset = Commodity.objects.select_related('organization', 'creator').filter(
@@ -305,7 +305,7 @@ class CommodityPostListAPIView(APIView):
 
 
 class CommodityDetailAPIView(APIView):
-    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector)
+    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector | IsCategoryManager)
 
     def get_queryset(self):
         queryset = Commodity.objects.select_related('organization', 'creator').filter(
@@ -422,7 +422,7 @@ class CommodityDetailAPIView(APIView):
 
 
 class ConsultantPostListAPIView(APIView):
-    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator)
+    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator | IsCategoryManager)
 
     def get_queryset(self):
         queryset = Consultant.objects.select_related('organization', 'creator').filter(
@@ -482,7 +482,7 @@ class ConsultantPostListAPIView(APIView):
 
 
 class ConsultantDetailAPIView(APIView):
-    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector)
+    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector | IsCategoryManager)
 
     def get_queryset(self):
         queryset = Consultant.objects.select_related('organization', 'creator').filter(
