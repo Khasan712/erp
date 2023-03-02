@@ -12,7 +12,7 @@ from api.v1.contracts.models import (
 class ContractFileUploadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contract
-        fields = ('id', 'document')
+        fields = ('id',)
 
 
 class ContractListSerializers(serializers.ModelSerializer):

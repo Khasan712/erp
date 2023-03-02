@@ -1,3 +1,4 @@
+import ujson
 from django.contrib.sites.shortcuts import get_current_site
 from django.shortcuts import render
 from rest_framework import generics, status, permissions
@@ -6,7 +7,7 @@ from rest_framework.views import APIView
 
 from api.v1.commons.pagination import make_pagination
 from api.v1.commons.views import string_to_date, exception_response, get_serializer_errors, raise_exception_response, \
-    object_not_found_response
+    object_not_found_response, serializer_valid_response, get_serializer_valid_response
 from api.v1.users.models import User
 from api.v1.users.services import make_errors
 from django.db import transaction
@@ -52,7 +53,8 @@ from .serializers import (
     SourcingEventBySourcingRequestIDSerializers, SourcingEventSuppliersSerializer, SourcingEventInfosSerializer,
     SourcingEventQuestionarySerializer, SourcingRequestServiceSerializers, SourcingRequestCommoditySerializers,
     SourcingRequestConsultantSerializers, EventInfoUpdateSerializer, EventUpdateSerializer,
-    EventSupplierUpdateSerializer, SourcingRequestAssignedListSerializer, SourcingEventSupplierQuestionarySerializer
+    EventSupplierUpdateSerializer, SourcingRequestAssignedListSerializer, SourcingEventSupplierQuestionarySerializer,
+    SupplierAnswerInEventSerializer
 )
 from api.v1.users.permissions import (
     IsSupplier,
@@ -1083,3 +1085,66 @@ class SourcingRequestStatusStatisticsView(APIView):
                 "data": data,
             }, status=status.HTTP_200_OK
         )
+
+
+def get_sourcing_request_queryset():
+    return SourcingRequest.objects.select_related(
+        'organization', 'departement', 'categoryRequest', 'requestor', 'assigned_to', 'currency'
+    )
+
+
+def sourcing_request_list_category_manager(request, category_manager):
+    sourcing_request = SourcingRequest.objects.select_related(
+            'organization', 'departement', 'categoryRequest', 'requestor', 'assigned_to', 'currency'
+        ).filter(
+        Q(requestor_id=category_manager.id) | Q(assigned_to_id=category_manager.id) |
+        Q(assigned_sourcing_request__assigned_id=category_manager.id)
+    )
+    return make_pagination(request, SourcingRequestListSerializer, sourcing_request)
+
+
+def get_supplier_answers(request, category_manager):
+    sourcing_request = request.data.get('parametr')
+    supplier_id = sourcing_request.get('supplier_id')
+    event_id = sourcing_request.get('event_id')
+    supplier_answers = SupplierAnswer.objects.select_related('supplier', 'question').filter(
+        Q(question__sourcing_request__requestor_id=category_manager.id) |
+        Q(question__sourcing_request__assigned_to_id=category_manager.id) |
+        Q(question__sourcing_request__assigned_sourcing_request__assigned_id=category_manager.id),
+        supplier_id=supplier_id, question__parent__parent__parent_id=event_id
+    )
+    print(supplier_answers)
+    serializer = SupplierAnswerInEventSerializer(supplier_answers, many=True)
+    print(serializer.data)
+    return get_serializer_valid_response(serializer)
+
+
+class SourcingRequestCategoryManager(APIView):
+    permission_classes = (permissions.IsAuthenticated, IsCategoryManager)
+
+    def get_sourcing_request_queryset(self):
+        return SourcingRequest.objects.select_related(
+            'organization', 'departement', 'categoryRequest', 'requestor', 'assigned_to', 'currency'
+        )
+
+    def post(self, request, *args, **kwargs):
+        try:
+            user = self.request.user
+            request_data = self.request.data
+            method = request_data.get('method')
+            match method:
+                case 'sourcing.request.list':
+                    return Response(
+                        sourcing_request_list_category_manager(request, user), status=status.HTTP_200_OK
+                    )
+                case 'supplier.answers':
+                    print("kirdi")
+                    return Response(
+                        get_supplier_answers(request, user), status=status.HTTP_200_OK
+                    )
+
+        except:
+            pass
+
+
+

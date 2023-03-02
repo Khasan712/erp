@@ -15,4 +15,5 @@ urlpatterns = [
     path('answer/', views.SupplierAnswerView.as_view()),
     path('upload/', views.MassUpload.as_view()),
     path('download/', views.MassDownload.as_view()),
+    path('manager/', views.SourcingRequestCategoryManager.as_view()),
 ]

@@ -331,3 +331,28 @@ class GetSupplierSourcingEvents(serializers.ModelSerializer):
         }
         return response
 
+
+class SupplierAnswerInEventSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = SupplierAnswer
+        fields = ('id', 'supplier', 'question', 'answer', 'yes_no', 'checker', 'weight')
+
+    def to_representation(self, instance):
+        res = super(SupplierAnswerInEventSerializer, self).to_representation(instance)
+        res['supplier'] = {
+            'id': instance.supplier.id,
+            'name': instance.supplier.name,
+        }
+        res['question'] = {
+            "title": instance.question.title,
+            "text": instance.question.text,
+            "answer": instance.question.answer,
+            "yes_no": instance.question.yes_no,
+        }
+        res['checker'] = {
+            'id': instance.checker.id,
+            'first_name': instance.checker.first_name,
+            'last_name': instance.checker.last_name,
+        }
+        return res

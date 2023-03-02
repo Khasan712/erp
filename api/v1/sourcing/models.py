@@ -81,7 +81,9 @@ class SourcingRequest(AbstractTimeBase):
 
 
 class SourcingRequestAssigned(models.Model):
-    sourcingRequest = models.ForeignKey(SourcingRequest, on_delete=models.CASCADE)
+    sourcingRequest = models.ForeignKey(
+        SourcingRequest, on_delete=models.CASCADE, related_name='assigned_sourcing_request'
+    )
     assigned = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -120,7 +122,9 @@ class SourcingRequestConsultant(models.Model):
 
 
 class SourcingRequestEvent(models.Model):
-    sourcing_request = models.ForeignKey(SourcingRequest, on_delete=models.SET_NULL, null=True)
+    sourcing_request = models.ForeignKey(
+        SourcingRequest, on_delete=models.SET_NULL, null=True, related_name='sourcing_request_event'
+    )
     creator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     sourcing_event = models.CharField(max_length=10, choices=SourcingEvent.choices(), blank=True, null=True)
 

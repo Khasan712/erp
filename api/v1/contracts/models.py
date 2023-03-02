@@ -101,7 +101,7 @@ class Contract(models.Model):
     count_changes = models.FloatField(default=0)
     notification = models.FloatField(null=True, blank=True)
     is_send_fixed = models.BooleanField(default=False)
-    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, blank =True, null=True)
+    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, blank=True, null=True)
     serviceCommodityConsultant = models.CharField(max_length=10, choices=ServiceChoice.choices(), blank=True, null=True)
 
     def __str__(self):
@@ -109,10 +109,9 @@ class Contract(models.Model):
 
     @property
     def get_agreements(self):
-        agreements = Contract.objects.select_related('parent_agreement', 'departement', 'category', 'currency',
-            'organization', 'create_by', 'supplier').filter(parent_agreement_id=self.id).values(
-            'id', 'name', 'contract_number'
-        )
+        agreements = Contract.objects.select_related(
+            'parent_agreement', 'departement', 'category', 'currency', 'organization', 'create_by', 'supplier'
+        ).filter(parent_agreement_id=self.id).values('id', 'name', 'contract_number')
         return agreements if agreements else None
 
     @property

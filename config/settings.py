@@ -49,7 +49,9 @@ INSTALLED_APPS += [
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'import_export',
-    'channels'
+    'channels',
+    'rest_framework_swagger',
+    'drf_yasg'
 ]
 
 # project apps
@@ -310,4 +312,15 @@ CHANNEL_LAYERS = {
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
 
+
+# Swagger
+SWAGGER_SETTINGS = {
+    "USE_SESSION_AUTH": True,
+    "LOGIN_URL": "/admin/login/",
+    "LOGOUT_URL": "/admin/logout/",
+    "REFETCH_SCHEMA_WITH_AUTH": True,
+    "REFETCH_SCHEMA_ON_LOGOUT": True,
+    "FETCH_SCHEMA_WITH_QUERY": True,
+    "DOC_EXPANSION": "none",
+}
 
