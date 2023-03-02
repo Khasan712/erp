@@ -144,7 +144,10 @@ class CategoryRequestListAPIView(generics.ListAPIView):
 class SourcingRequestView(APIView):
     parser_classes = (FormParser, MultiPartParser, JSONParser)
     # parser_class = (FileUploadParser,)
-    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator | IsSourcingAdministrator)
+    permission_classes = (
+        permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator | IsSourcingAdministrator |
+        IsCategoryManager
+    )
 
     def get_queryset(self):
         user = self.request.user
@@ -1103,19 +1106,19 @@ def sourcing_request_list_category_manager(request, category_manager):
     return make_pagination(request, SourcingRequestListSerializer, sourcing_request)
 
 
-def get_supplier_answers(request, category_manager):
+def get_supplier_answers(request, user):
+    print("111111111111111111")
     sourcing_request = request.data.get('parametr')
     supplier_id = sourcing_request.get('supplier_id')
     event_id = sourcing_request.get('event_id')
-    supplier_answers = SupplierAnswer.objects.select_related('supplier', 'question').filter(
-        Q(question__sourcing_request__requestor_id=category_manager.id) |
-        Q(question__sourcing_request__assigned_to_id=category_manager.id) |
-        Q(question__sourcing_request__assigned_sourcing_request__assigned_id=category_manager.id),
+    supplier_questionary_answers = SupplierAnswer.objects.select_related('supplier', 'question').filter(
+        Q(question__sourcing_request__requestor_id=user.id) |
+        Q(question__sourcing_request__assigned_to_id=user.id) |
+        Q(question__sourcing_request__assigned_sourcing_request__assigned_id=user.id),
         supplier_id=supplier_id, question__parent__parent__parent_id=event_id
     )
-    print(supplier_answers)
-    serializer = SupplierAnswerInEventSerializer(supplier_answers, many=True)
-    print(serializer.data)
+    print(supplier_questionary_answers)
+    serializer = SupplierAnswerInEventSerializer(supplier_questionary_answers, many=True)
     return get_serializer_valid_response(serializer)
 
 
@@ -1138,13 +1141,12 @@ class SourcingRequestCategoryManager(APIView):
                         sourcing_request_list_category_manager(request, user), status=status.HTTP_200_OK
                     )
                 case 'supplier.answers':
-                    print("kirdi")
                     return Response(
                         get_supplier_answers(request, user), status=status.HTTP_200_OK
                     )
 
-        except:
-            pass
+        except Exception as e:
+            return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
 
 
 

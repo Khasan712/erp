@@ -333,7 +333,6 @@ class GetSupplierSourcingEvents(serializers.ModelSerializer):
 
 
 class SupplierAnswerInEventSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = SupplierAnswer
         fields = ('id', 'supplier', 'question', 'answer', 'yes_no', 'checker', 'weight')
