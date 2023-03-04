@@ -1110,14 +1110,13 @@ def sourcing_request_list_category_manager(request, category_manager):
 
 
 def get_supplier_answers(request, user):
-    print("111111111111111111")
     sourcing_request = request.data.get('parametr')
     supplier_id = sourcing_request.get('supplier_id')
     event_id = sourcing_request.get('event_id')
     supplier_questionary_answers = SupplierAnswer.objects.select_related('supplier', 'question').filter(
-        Q(question__sourcing_request__requestor_id=user.id) |
-        Q(question__sourcing_request__assigned_to_id=user.id) |
-        Q(question__sourcing_request__assigned_sourcing_request__assigned_id=user.id),
+        # Q(question__sourcing_request__requestor_id=user.id) |
+        # Q(question__sourcing_request__assigned_to_id=user.id) |
+        # Q(question__sourcing_request__assigned_sourcing_request__assigned_id=user.id),
         supplier_id=supplier_id, question__parent__parent__parent_id=event_id
     )
     print(supplier_questionary_answers)
