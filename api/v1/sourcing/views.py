@@ -460,7 +460,10 @@ class SourcingRequestEventView(APIView):
 
 
 class SourcingEventGetByParamsAPIView(APIView):
-    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator | IsSupplier | IsSourcingAdministrator)
+    permission_classes = (
+        permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator | IsSupplier |
+        IsSourcingAdministrator | IsCategoryManager
+    )
 
     def get_queryset(self):
         sourcing_events = SourcingRequestEvent.objects.select_related('sourcing_request', 'creator', 'parent').filter(
