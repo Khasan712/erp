@@ -315,7 +315,10 @@ class SourcingRequestView(APIView):
 
 
 class SourcingRequestEventView(APIView):
-    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator | IsSourcingAdministrator)
+    permission_classes = (
+        permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator | IsSourcingAdministrator |
+        IsCategoryManager
+    )
 
     def get_queryset(self):
         sourcing_request_id = self.request.query_params.get('sourcing_request')
@@ -1123,7 +1126,10 @@ def get_supplier_answers(request, user):
 
 
 class SourcingRequestCategoryManager(APIView):
-    permission_classes = (permissions.IsAuthenticated, IsCategoryManager)
+    permission_classes = (
+        permissions.IsAuthenticated, IsCategoryManager | IsSourcingAdministrator | IsContractAdministrator |
+        IsSourcingDirector
+    )
 
     def get_sourcing_request_queryset(self):
         return SourcingRequest.objects.select_related(

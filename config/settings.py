@@ -322,5 +322,13 @@ SWAGGER_SETTINGS = {
     "REFETCH_SCHEMA_ON_LOGOUT": True,
     "FETCH_SCHEMA_WITH_QUERY": True,
     "DOC_EXPANSION": "none",
+
+    # 'SECURITY_DEFINITIONS': {
+    #     'api_key': {
+    #         'type': 'apiKey',
+    #         'in': 'header',
+    #         'name': 'Authorization'
+    #     }
+    # },
 }
 
