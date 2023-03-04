@@ -1149,7 +1149,7 @@ class SourcingRequestCategoryManager(APIView):
                     )
                 case 'supplier.answers':
                     return Response(
-                        get_supplier_answers(request, ), status=status.HTTP_200_OK
+                        get_supplier_answers(request), status=status.HTTP_200_OK
                     )
 
         except Exception as e:

@@ -339,19 +339,22 @@ class SupplierAnswerInEventSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         res = super(SupplierAnswerInEventSerializer, self).to_representation(instance)
-        res['supplier'] = {
-            'id': instance.supplier.id,
-            'name': instance.supplier.name,
-        }
-        res['question'] = {
-            "title": instance.question.title,
-            "text": instance.question.text,
-            "answer": instance.question.answer,
-            "yes_no": instance.question.yes_no,
-        }
-        res['checker'] = {
-            'id': instance.checker.id,
-            'first_name': instance.checker.first_name,
-            'last_name': instance.checker.last_name,
-        }
+        if res.get('supplier'):
+            res['supplier'] = {
+                'id': instance.supplier.id,
+                'name': instance.supplier.name,
+            }
+        if res.get('question'):
+            res['question'] = {
+                "title": instance.question.title,
+                "text": instance.question.text,
+                "answer": instance.question.answer,
+                "yes_no": instance.question.yes_no,
+            }
+        if res.get('checker'):
+            res['checker'] = {
+                'id': instance.checker.id,
+                'first_name': instance.checker.first_name,
+                'last_name': instance.checker.last_name,
+            }
         return res
