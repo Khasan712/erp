@@ -1113,18 +1113,56 @@ def sourcing_request_list_category_manager(request, category_manager):
 
 
 def get_supplier_answers(request):
-    # Q(question__sourcing_request__requestor_id=user.id) |
-    # Q(question__sourcing_request__assigned_to_id=user.id) |
-    # Q(question__sourcing_request__assigned_sourcing_request__assigned_id=user.id),
     sourcing_request = request.data.get('parametr')
     supplier_id = sourcing_request.get('supplier_id')
     event_id = sourcing_request.get('event_id')
-    supplier_questionary_answers = SupplierAnswer.objects.select_related('supplier', 'question').filter(
-        supplier_id=supplier_id, question__parent__parent__parent_id=int(event_id)
-    )
-    serializer = SupplierAnswerInEventSerializer(supplier_questionary_answers, many=True)
-    return get_serializer_valid_response(serializer)
 
+    # Queryset
+    event_queryset = SourcingRequestEvent.objects.select_related('sourcing_request', 'creator', 'parent')
+    supplier = Supplier.objects.select_related('organization', 'create_by', 'supplier', 'parent_supplier').filter(
+        id=supplier_id
+    ).first()
+    questionary = event_queryset.filter(parent_id=event_id, general_status='questionary').first()
+
+    categories = []
+    with transaction.atomic():
+        for category in event_queryset.filter(parent_id=questionary.id, general_status='category'):
+            category_questions = []
+            for question in event_queryset.filter(parent_id=category.id, general_status='question'):
+                supplier_answer = SupplierAnswer.objects.select_related('supplier', 'question').filter(
+                    question_id=question.id, supplier_id=supplier_id
+                ).first()
+                question_obj = {
+                    'id': question.id,
+                    'text': question.text,
+                    'answer': question.answer,
+                    'yes_no': question.yes_no,
+                    'weight': question.weight,
+                    "supplier_answer": {
+                        'id': supplier_answer.id,
+                        'answer': supplier_answer.answer,
+                        'yes_no': supplier_answer.yes_no
+                    }
+                }
+                category_questions.append(question_obj)
+            category_obj = {
+                'id': category.id,
+                'title': category.title,
+                'weight': category.weight,
+                'questions': category_questions
+            }
+            categories.append(category_obj)
+    return {
+        "supplier_id": supplier_id,
+        'supplier_name': supplier.name,
+        "get_questionary_data": {
+            "id": questionary.id,
+            "title": questionary.title,
+            "text": questionary.text,
+            "success_weight": questionary.success_weight,
+            "categories": categories
+        }
+    }
 
 class SourcingRequestCategoryManager(APIView):
     permission_classes = (

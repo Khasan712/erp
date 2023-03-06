@@ -346,10 +346,14 @@ class SupplierAnswerInEventSerializer(serializers.ModelSerializer):
             }
         if res.get('question'):
             res['question'] = {
+                "id": instance.question.id,
                 "title": instance.question.title,
                 "text": instance.question.text,
                 "answer": instance.question.answer,
                 "yes_no": instance.question.yes_no,
+                # "category": {
+                #     "id":
+                # }
             }
         if res.get('checker'):
             res['checker'] = {
