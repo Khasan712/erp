@@ -874,14 +874,11 @@ class SupplierAnswerView(APIView):
                 ).first()
                 supplier_in_event = SourcingRequestEventSuppliers.objects.select_related(
                     'supplier', 'sourcingRequestEvent'
-                ).get(supplier_id=supplier.id)
+                ).get(supplier_id=supplier.id, sourcingRequestEvent_id=data['event_id'])
                 if supplier_in_event.supplier_timeline in ['done', 'passed', 'rejected']:
                     raise ValidationError(message='You have already submitted.')
-                supplier_answers = SupplierAnswer.objects.select_related('supplier', 'question').filter(
-                    supplier_id=data['supplier']
-                )
                 for d in data['answers']:
-                    supplier_answer = supplier_answers.filter(question_id=d['question']).first()
+                    supplier_answer, _ = SupplierAnswer.objects.get_or_create(question_id=d['question'], supplier_id=data['supplier'])
                     if supplier_answer is not None:
                         supplier_answer_serializer = SupplierAnswerSerializers(supplier_answer, data=d, partial=True)
                         if not supplier_answer_serializer.is_valid():
