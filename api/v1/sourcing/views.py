@@ -923,7 +923,9 @@ class SupplierAnswerView(APIView):
                         supplier_answer.save()
                 if answers:
                     for answer in answers:
-                        supplier_answer = supplier_answers.filter(question_id=answer['question_id']).first()
+                        supplier_answer = supplier_answers.filter(
+                            question_id=answer['question_id'], question__yes_no=None
+                        ).first()
                         if not supplier_answer:
                             raise ValidationError(message="Supplier answer not found.")
                         if answer['weight'] > supplier_answer.question.weight:
