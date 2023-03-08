@@ -916,38 +916,36 @@ class SupplierAnswerView(APIView):
                 supplier_id=supplier_id, question__parent__parent__parent_id=event_id
             )
             with transaction.atomic():
-                supplier_result = 0
-                for supplier_answer in supplier_answers:
-                    if supplier_answer.question.yes_no in [True, False]:
-                        supplier_answer.weight = supplier_answer.question.weight if supplier_answer.question.yes_no else 0
-                        supplier_result += supplier_answer.question.weight if supplier_answer.question.yes_no else 0
+                for supplier_answer in supplier_answers.filter(question__yes_no__in=[True, False]):
+                    if supplier_answer.yes_no != supplier_answer.question.yes_no:
+                        supplier_answer.weight = supplier_answer.question.weight
                         supplier_answer.yes_no = supplier_answer.question.yes_no
-                    else:
-                        pass
-                for d in data:
-                    answer = SupplierAnswer.objects.filter(id=d.get('id')).first()
-                    if not answer:
-                        raise ValidationError(message="Answer not found.")
-                    serializer = CheckSASerializers(answer, data=d, partial=True)
-                    if not serializer.is_valid():
-                        raise ValidationError(message=f"{make_errors(serializer.errors)}")
-                    supplier_result += d.get('weight')
-                    serializer.save(checker_id=checker)
+                        supplier_answer.save()
+                if answers:
+                    for answer in answers:
+                        supplier_answer = supplier_answers.filter(question_id=answer['question_id']).first()
+                        if not supplier_answer:
+                            raise ValidationError(message="Supplier answer not found.")
+                        if answer['weight'] > supplier_answer.question.weight:
+                            raise ValidationError(message="Weight is grater then question weight")
+                        if answer['weight'] != supplier_answer.weight:
+                            supplier_answer.weight = answer['weight']
+                            supplier_answer.save()
 
+                supplier_total_result = supplier_answers.aggregate(foo=Coalesce(Sum('weight'), 0))['foo']
                 total_result, create = SupplierResult.objects.get_or_create(
                     checker_id=checker,
                     questionary_id=answer.question.parent.parent.id,
                     supplier_id=answer.supplier.id
                 )
-                total_result.total_weight = supplier_result
-                total_result.save()
+                if supplier_total_result != total_result.total_weight:
+                    total_result.total_weight = supplier_total_result
 
                 if total_result.questionary.success_weight > total_result.total_weight:
                     total_result.questionary_status = 'rejected'
-                    total_result.save()
                 else:
                     total_result.questionary_status = 'congratulations'
-                    total_result.save()
+                total_result.save()
                 send_result_notification(total_result)
 
         except ValidationError as e:
