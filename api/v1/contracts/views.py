@@ -37,7 +37,7 @@ from api.v1.users.services import make_errors
 from api.v1.users.permissions import (
     IsAdmin,
     IsContractAdministrator,
-    IsSourcingDirector, IsSupplier, IsCategoryManager
+    IsSourcingDirector, IsSupplier, IsCategoryManager, IsLawyer
 )
 
 
@@ -107,7 +107,9 @@ class ContractCategoryStatisticsView(APIView):
 
 
 class ContractListView(APIView):
-    permission_classes = (permissions.IsAuthenticated, IsContractAdministrator | IsSourcingDirector | IsCategoryManager)
+    permission_classes = (
+        permissions.IsAuthenticated, IsContractAdministrator | IsSourcingDirector | IsCategoryManager | IsLawyer
+    )
 
     def get_queryset(self):
         queryset = Contract.objects.select_related('parent_agreement', 'departement', 'category', 'currency',
@@ -614,7 +616,10 @@ class DepartmentListDetailView(APIView):
 
 # APi for category :
 class CategoryListView(APIView):
-    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator | IsSupplier | IsCategoryManager)
+    permission_classes = (
+        permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator | IsSupplier | IsCategoryManager |
+        IsLawyer
+    )
 
     def get_queryset(self):
         queryset = Category.objects.select_related('organization').filter(

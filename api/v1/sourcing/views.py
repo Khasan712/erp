@@ -863,7 +863,7 @@ class SourcingCommentsView(APIView):
 
 
 class SupplierAnswerView(APIView):
-    permission_classes = (permissions.IsAuthenticated, IsSupplier | IsCategoryManager)
+    permission_classes = (permissions.IsAuthenticated, )
 
     def post(self, request):
         try:
@@ -908,22 +908,39 @@ class SupplierAnswerView(APIView):
     def patch(self, request):
         try:
             data = request.data
+            supplier_id = data.get('supplier_id')
+            event_id = data.get('event_id')
+            answers = data.get('answers')
             checker = self.request.user.id
+            supplier_answers = SupplierAnswer.objects.select_related('supplier', 'question', 'checker').filter(
+                supplier_id=supplier_id, question__parent__parent__parent_id=event_id
+            )
             with transaction.atomic():
+                supplier_result = 0
+                for supplier_answer in supplier_answers:
+                    if supplier_answer.question.yes_no in [True, False]:
+                        supplier_answer.weight = supplier_answer.question.weight if supplier_answer.question.yes_no else 0
+                        supplier_result += supplier_answer.question.weight if supplier_answer.question.yes_no else 0
+                        supplier_answer.yes_no = supplier_answer.question.yes_no
+                    else:
+                        pass
                 for d in data:
-                    d['checker'] = checker
-                    answer = SupplierAnswer.objects.get(id=d.get('id'))
+                    answer = SupplierAnswer.objects.filter(id=d.get('id')).first()
+                    if not answer:
+                        raise ValidationError(message="Answer not found.")
                     serializer = CheckSASerializers(answer, data=d, partial=True)
                     if not serializer.is_valid():
                         raise ValidationError(message=f"{make_errors(serializer.errors)}")
-                    total_result, create = SupplierResult.objects.get_or_create(
-                        checker_id=checker,
-                        questionary_id=answer.question.parent.parent.id,
-                        supplier_id=answer.supplier.id
-                    )
-                    total_result.total_weight+=d.get('weight')
-                    total_result.save()
-                    serializer.save()
+                    supplier_result += d.get('weight')
+                    serializer.save(checker_id=checker)
+
+                total_result, create = SupplierResult.objects.get_or_create(
+                    checker_id=checker,
+                    questionary_id=answer.question.parent.parent.id,
+                    supplier_id=answer.supplier.id
+                )
+                total_result.total_weight = supplier_result
+                total_result.save()
 
                 if total_result.questionary.success_weight > total_result.total_weight:
                     total_result.questionary_status = 'rejected'
@@ -976,6 +993,15 @@ class SupplierAnswerView(APIView):
                 }, status=status.HTTP_400_BAD_REQUEST
             )
 
+
+class CheckSupplierAnswers(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            pass
+        except Exception as e:
+            return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
 
 class MassUpload(APIView):
     permission_classes = (permissions.IsAuthenticated,)

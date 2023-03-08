@@ -216,12 +216,9 @@ class SupplierAnswerSerializers(serializers.ModelSerializer):
 
 class CheckSASerializers(serializers.ModelSerializer):
     """ Checking supplier answer by checker """
-    checker = UserSerializer
-    weight = serializers.FloatField(required=True)
-
     class Meta:
         model = SupplierAnswer
-        fields = ('id', 'checker', 'is_true', 'checker_message', 'weight')
+        fields = ('id', 'weight')
 
 
 class SupplierResultSerializer(serializers.ModelSerializer):
