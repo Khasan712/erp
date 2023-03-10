@@ -1164,7 +1164,8 @@ def get_supplier_answers(request):
                     "supplier_answer": {
                         'id': supplier_answer.id,
                         'answer': supplier_answer.answer,
-                        'yes_no': supplier_answer.yes_no
+                        'yes_no': supplier_answer.yes_no,
+                        "weight": supplier_answer.weight
                     }
                 }
                 category_questions.append(question_obj)
@@ -1186,6 +1187,7 @@ def get_supplier_answers(request):
             "categories": categories
         }
     }
+
 
 class SourcingRequestCategoryManager(APIView):
     permission_classes = (
