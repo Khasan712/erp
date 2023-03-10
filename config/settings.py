@@ -27,6 +27,7 @@ SECRET_KEY = os.environ['SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = bool(os.environ.get('DEBUG') == 'True')
+DEBUG = True
 ALLOWED_HOSTS = ['*', ]
 # ALLOWED_HOSTS = ['*', ] if DEBUG else os.environ['ALLOWED_HOSTS'].split(' ')
 
@@ -106,8 +107,9 @@ ASGI_APPLICATION = 'config.sgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
-
-if DEBUG:
+print(DEBUG)
+print(type(DEBUG))
+if not DEBUG:
     DATABASES = {
        'default': {
            'ENGINE': 'django.db.backends.sqlite3',

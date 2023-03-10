@@ -928,17 +928,17 @@ class SupplierAnswerView(APIView):
                         ).first()
                         if not supplier_answer:
                             raise ValidationError(message="Supplier answer not found.")
-                        if answer['weight'] > supplier_answer.question.weight:
+                        if float(answer['weight']) > supplier_answer.question.weight:
                             raise ValidationError(message="Weight is grater then question weight")
-                        if answer['weight'] != supplier_answer.weight:
-                            supplier_answer.weight = answer['weight']
+                        if float(answer['weight']) != supplier_answer.weight:
+                            supplier_answer.weight = float(answer['weight'])
                             supplier_answer.save()
 
-                supplier_total_result = supplier_answers.aggregate(foo=Coalesce(Sum('weight'), 0))['foo']
+                supplier_total_result = supplier_answers.aggregate(foo=Coalesce(Sum('weight'), 0.0))['foo']
                 total_result, create = SupplierResult.objects.get_or_create(
                     checker_id=checker,
-                    questionary_id=answer.question.parent.parent.id,
-                    supplier_id=answer.supplier.id
+                    questionary_id=supplier_answers.first().question.parent.parent.id,
+                    supplier_id=supplier_answers.first().supplier.id
                 )
                 if supplier_total_result != total_result.total_weight:
                     total_result.total_weight = supplier_total_result
