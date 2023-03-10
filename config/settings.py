@@ -26,7 +26,7 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 SECRET_KEY = os.environ['SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = bool(int(os.environ.get('DEBUG', 0)))
+DEBUG = bool(os.environ.get('DEBUG') == 'True')
 ALLOWED_HOSTS = ['*', ]
 # ALLOWED_HOSTS = ['*', ] if DEBUG else os.environ['ALLOWED_HOSTS'].split(' ')
 
@@ -232,8 +232,8 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
 
-# CORS_ORIGIN_ALLOW_ALL = True
-# CORS_ALLOW_ALL_ORIGINS = True
+#CORS_ORIGIN_ALLOW_ALL = True
+#CORS_ALLOW_ALL_ORIGINS = True
 # CORS_URLS_REGEX = r'^/api/v1/.*$'
 
 CORS_ALLOW_METHODS = [

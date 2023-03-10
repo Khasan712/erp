@@ -21,7 +21,6 @@ coreschema==0.0.4
 cryptography==38.0.4
 defusedxml==0.7.1
 diff-match-patch==20200713
-dispatch==2.0.6
 distro==1.8.0
 Django==3.2.4
 django-cors-headers==3.13.0
