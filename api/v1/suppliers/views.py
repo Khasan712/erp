@@ -38,7 +38,7 @@ from api.v1.chat.views import (
     send_result_notification
 )
 from api.v1.users.permissions import (
-    IsSourcingDirector, IsContractAdministrator, IsSupplier, IsCategoryManager,
+    IsSourcingDirector, IsContractAdministrator, IsSupplier, IsCategoryManager, IsSourcingAdministrator,
 )
 from ..contracts.models import Contract
 from ..contracts.serializers import ContractGetSerializer
@@ -49,7 +49,7 @@ from ..sourcing.serializers import GetSupplierSourcingEvents
 class SupplierListView(APIView):
     permission_classes = (
         permissions.IsAuthenticated, IsContractAdministrator | IsSourcingDirector |
-        IsCategoryManager
+        IsCategoryManager | IsSourcingAdministrator
     )
 
     def get_queryset(self):
@@ -91,7 +91,9 @@ class SupplierListView(APIView):
 
 
 class SuppliersDetail(APIView):
-    permission_classes = (permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator)
+    permission_classes = (
+        permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator | IsSourcingAdministrator
+    )
 
     def get_queryset(self):
         queryset = Supplier.objects.select_related('organization', 'create_by', 'supplier', 'parent').filter(

@@ -37,7 +37,7 @@ from api.v1.users.services import make_errors
 from api.v1.users.permissions import (
     IsAdmin,
     IsContractAdministrator,
-    IsSourcingDirector, IsSupplier, IsCategoryManager, IsLawyer
+    IsSourcingDirector, IsSupplier, IsCategoryManager, IsLawyer, IsSourcingAdministrator
 )
 
 
@@ -108,7 +108,8 @@ class ContractCategoryStatisticsView(APIView):
 
 class ContractListView(APIView):
     permission_classes = (
-        permissions.IsAuthenticated, IsContractAdministrator | IsSourcingDirector | IsCategoryManager | IsLawyer
+        permissions.IsAuthenticated, IsContractAdministrator | IsSourcingDirector | IsCategoryManager | IsLawyer |
+        IsSourcingAdministrator
     )
 
     def get_queryset(self):
@@ -242,7 +243,9 @@ class ContractListView(APIView):
 
 
 class ContractMasterAgreementListView(APIView):
-    permission_classes = (permissions.IsAuthenticated, IsContractAdministrator | IsSourcingDirector)
+    permission_classes = (
+        permissions.IsAuthenticated, IsContractAdministrator | IsSourcingDirector
+    )
 
     def get_queryset(self):
         queryset = Contract.objects.select_related(
@@ -262,7 +265,7 @@ class ContractMasterAgreementListView(APIView):
 class ContractDetailView(APIView):
     permission_classes = (
         permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator | IsSupplier | IsCategoryManager |
-        IsLawyer
+        IsLawyer | IsSourcingAdministrator
     )
 
     def get_queryset(self):
@@ -621,7 +624,7 @@ class DepartmentListDetailView(APIView):
 class CategoryListView(APIView):
     permission_classes = (
         permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator | IsSupplier | IsCategoryManager |
-        IsLawyer
+        IsLawyer | IsSourcingAdministrator
     )
 
     def get_queryset(self):
