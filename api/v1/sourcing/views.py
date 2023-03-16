@@ -506,7 +506,7 @@ class SourcingEventGetByParamsAPIView(APIView):
                 return documents
 
     def get_supplier_answer_question(self, questionnaire: int, supplier: int):
-        supplier_answers = SupplierAnswer.objects.select_related('supplier', 'question', 'supplier_result').filter(
+        supplier_answers = SupplierAnswer.objects.select_related('supplier', 'question', 'supplier_result', 'checker').filter(
             supplier_id=supplier
         )
         categories = []
@@ -886,7 +886,7 @@ class SupplierAnswerView(APIView):
         if not supplier_in_event:
             raise ValidationError("Supplier not found!")
 
-        supplier_answers = SupplierAnswer.objects.select_related('supplier', 'question', 'supplier_result').filter(
+        supplier_answers = SupplierAnswer.objects.select_related('supplier', 'question', 'supplier_result', 'checker').filter(
             supplier_id=supplier_id, question__parent__parent__parent_id=event_id
         )
         if not supplier_answers.exists():
@@ -896,7 +896,7 @@ class SupplierAnswerView(APIView):
         ).first()
         if not questionary:
             raise ValidationError("Questionary not found!")
-        supplier_result, _ = SupplierResult.objects.select_related('questionary', 'supplier', 'checker').get_or_create(
+        supplier_result, _ = SupplierResult.objects.select_related('questionary', 'supplier').get_or_create(
             questionary_id=questionary.id,
             supplier_id=supplier_in_event.supplier.id
         )
@@ -924,7 +924,6 @@ class SupplierAnswerView(APIView):
 
                 supplier_total_result = supplier_answers.aggregate(foo=Coalesce(Sum('weight'), 0.0))['foo']
                 total_result, create = SupplierResult.objects.get_or_create(
-                    checker_id=checker,
                     questionary_id=supplier_answers.first().question.parent.parent.id,
                     supplier_id=supplier_answers.first().supplier.id
                 )
@@ -1005,7 +1004,7 @@ class SupplierAnswerView(APIView):
             questionary = SourcingRequestEvent.objects.select_related('sourcing_request', 'creator', 'parent').filter(
                 id=questionary_id, general_status='questionary'
             ).first()
-            supplier_answer = SupplierAnswer.objects.select_related('supplier', 'question', 'supplier_result').filter(
+            supplier_answer = SupplierAnswer.objects.select_related('supplier', 'question', 'supplier_result', 'checker').filter(
                 supplier_id=supplier.id, question__parent__parent_id=questionary.id
             )
             # data = questionary.annotate(categories=)
@@ -1185,7 +1184,7 @@ def get_supplier_answers(request):
         for category in event_queryset.filter(parent_id=questionary.id, general_status='category'):
             category_questions = []
             for question in event_queryset.filter(parent_id=category.id, general_status='question'):
-                supplier_answer = SupplierAnswer.objects.select_related('supplier', 'question', 'supplier_result').filter(
+                supplier_answer = SupplierAnswer.objects.select_related('supplier', 'question', 'supplier_result', 'checker').filter(
                     question_id=question.id, supplier_id=supplier_id
                 ).first()
                 question_obj = {

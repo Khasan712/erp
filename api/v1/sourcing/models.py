@@ -206,7 +206,7 @@ class SourcingRequestEventSuppliers(models.Model):
 
     @property
     def get_total_weight(self):
-        total_weight = SupplierAnswer.objects.select_related('supplier', 'question', 'supplier_result').filter(
+        total_weight = SupplierAnswer.objects.select_related('supplier_result', 'supplier', 'question', 'checker').filter(
             supplier_id=self.supplier.id, question__parent__parent__parent_id=self.sourcingRequestEvent.id
         ).aggregate(foo=Coalesce(Sum('weight'), 0.0))['foo']
         return total_weight
