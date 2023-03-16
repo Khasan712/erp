@@ -866,48 +866,83 @@ class SupplierAnswerView(APIView):
     permission_classes = (permissions.IsAuthenticated, )
 
     def give_weight(self):
+        user = self.request.user
         data = self.request.data
         supplier_id = data.get('supplier_id')
         event_id = data.get('event_id')
+        is_submitted = data.get('is_submitted')
         answers = data.get('answers')
         checker = self.request.user.id
+
+        event = SourcingRequestEvent.objects.select_related('sourcing_request', 'creator', 'parent').filter(
+            id=event_id, creator__organization_id=user.organization.id, general_status='sourcing_event'
+        ).first()
+        if not event:
+            raise ValidationError('Sourcing event not found!')
+
+        supplier_in_event = SourcingRequestEventSuppliers.objects.select_related('supplier', 'sourcingRequestEvent').filter(
+            supplier_id=supplier_id, sourcingRequestEvent_id=event_id
+        ).first()
+        if not supplier_in_event:
+            raise ValidationError("Supplier not found!")
+
         supplier_answers = SupplierAnswer.objects.select_related('supplier', 'question', 'checker').filter(
             supplier_id=supplier_id, question__parent__parent__parent_id=event_id
         )
-        with transaction.atomic():
-            for supplier_answer in supplier_answers.filter(question__yes_no__in=[True, False]):
-                if supplier_answer.yes_no != supplier_answer.question.yes_no:
-                    supplier_answer.weight = supplier_answer.question.weight
-                    supplier_answer.yes_no = supplier_answer.question.yes_no
-                    supplier_answer.save()
-            if answers:
-                for answer in answers:
-                    supplier_answer = supplier_answers.filter(
-                        question_id=answer['question_id'], question__yes_no=None
-                    ).first()
-                    if not supplier_answer:
-                        raise ValidationError(message="Supplier answer not found.")
-                    if float(answer['weight']) > supplier_answer.question.weight:
-                        raise ValidationError(message="Weight is grater then question weight")
-                    if float(answer['weight']) != supplier_answer.weight:
-                        supplier_answer.weight = float(answer['weight'])
+        if not supplier_answers.exists():
+            raise ValidationError("Supplier answers not found!")
+        questionary = SourcingRequestEvent.objects.select_related('sourcing_request', 'creator', 'parent').filter(
+            parent_id=event_id, creator__organization_id=user.organization.id, general_status='questionary'
+        ).first()
+        if not questionary:
+            raise ValidationError("Questionary not found!")
+        supplier_result, _ = SupplierResult.objects.select_related('questionary', 'supplier', 'checker').get_or_create(
+            questionary_id=questionary.id,
+            supplier_id=supplier_in_event.supplier.id
+        )
+        if supplier_result.is_submitted:
+            raise ValidationError("Supplier answers has already checked!")
+        else:
+            with transaction.atomic():
+                for supplier_answer in supplier_answers.filter(question__yes_no__in=[True, False]):
+                    if supplier_answer.yes_no != supplier_answer.question.yes_no:
+                        supplier_answer.weight = supplier_answer.question.weight
+                        supplier_answer.yes_no = supplier_answer.question.yes_no
                         supplier_answer.save()
+                if answers:
+                    for answer in answers:
+                        supplier_answer = supplier_answers.filter(
+                            question_id=answer['question_id'], question__yes_no=None
+                        ).first()
+                        if not supplier_answer:
+                            raise ValidationError(message="Supplier answer not found.")
+                        if float(answer['weight']) > supplier_answer.question.weight:
+                            raise ValidationError(message="Weight is grater then question weight")
+                        if float(answer['weight']) != supplier_answer.weight:
+                            supplier_answer.weight = float(answer['weight'])
+                            supplier_answer.save()
 
-            supplier_total_result = supplier_answers.aggregate(foo=Coalesce(Sum('weight'), 0.0))['foo']
-            total_result, create = SupplierResult.objects.get_or_create(
-                checker_id=checker,
-                questionary_id=supplier_answers.first().question.parent.parent.id,
-                supplier_id=supplier_answers.first().supplier.id
-            )
-            if supplier_total_result != total_result.total_weight:
-                total_result.total_weight = supplier_total_result
+                supplier_total_result = supplier_answers.aggregate(foo=Coalesce(Sum('weight'), 0.0))['foo']
+                total_result, create = SupplierResult.objects.get_or_create(
+                    checker_id=checker,
+                    questionary_id=supplier_answers.first().question.parent.parent.id,
+                    supplier_id=supplier_answers.first().supplier.id
+                )
+                if supplier_total_result != total_result.total_weight:
+                    total_result.total_weight = supplier_total_result
 
-            if total_result.questionary.success_weight > total_result.total_weight:
-                total_result.questionary_status = 'rejected'
-            else:
-                total_result.questionary_status = 'congratulations'
-            total_result.save()
-            send_result_notification(total_result)
+                if total_result.questionary.success_weight > total_result.total_weight:
+                    total_result.questionary_status = 'rejected'
+                else:
+                    total_result.questionary_status = 'congratulations'
+                total_result.save()
+                send_result_notification(total_result)
+        if is_submitted:
+            total_weight = supplier_answers.aggregate(foo=Coalesce(Sum('weight'), 0))['foo']
+            supplier_result.is_submitted = True
+            supplier_result.total_weight = total_weight
+            supplier_result.questionary_status = 'congratulations' if total_weight >= supplier_result.success_weight else 'rejected'
+            supplier_result.save()
 
     def post(self, request):
         try:
@@ -923,7 +958,7 @@ class SupplierAnswerView(APIView):
                     }, status=status.HTTP_200_OK
                 )
             with transaction.atomic():
-                supplier = Supplier.objects.select_related('organization', 'create_by', 'supplier', 'parent').filter(
+                supplier = Supplier.objects.select_related('organization', 'create_by', 'supplier', 'parent', 'supplier_result').filter(
                     id=data['supplier']
                 ).first()
                 supplier_in_event = SourcingRequestEventSuppliers.objects.select_related(
@@ -958,69 +993,6 @@ class SupplierAnswerView(APIView):
                     "data": [],
                 }, status=status.HTTP_201_CREATED
             )
-
-    # def patch(self, request):
-    #     try:
-    #         data = request.data
-    #         supplier_id = data.get('supplier_id')
-    #         event_id = data.get('event_id')
-    #         answers = data.get('answers')
-    #         checker = self.request.user.id
-    #         supplier_answers = SupplierAnswer.objects.select_related('supplier', 'question', 'checker').filter(
-    #             supplier_id=supplier_id, question__parent__parent__parent_id=event_id
-    #         )
-    #         with transaction.atomic():
-    #             for supplier_answer in supplier_answers.filter(question__yes_no__in=[True, False]):
-    #                 if supplier_answer.yes_no != supplier_answer.question.yes_no:
-    #                     supplier_answer.weight = supplier_answer.question.weight
-    #                     supplier_answer.yes_no = supplier_answer.question.yes_no
-    #                     supplier_answer.save()
-    #             if answers:
-    #                 for answer in answers:
-    #                     supplier_answer = supplier_answers.filter(
-    #                         question_id=answer['question_id'], question__yes_no=None
-    #                     ).first()
-    #                     if not supplier_answer:
-    #                         raise ValidationError(message="Supplier answer not found.")
-    #                     if float(answer['weight']) > supplier_answer.question.weight:
-    #                         raise ValidationError(message="Weight is grater then question weight")
-    #                     if float(answer['weight']) != supplier_answer.weight:
-    #                         supplier_answer.weight = float(answer['weight'])
-    #                         supplier_answer.save()
-    #
-    #             supplier_total_result = supplier_answers.aggregate(foo=Coalesce(Sum('weight'), 0.0))['foo']
-    #             total_result, create = SupplierResult.objects.get_or_create(
-    #                 checker_id=checker,
-    #                 questionary_id=supplier_answers.first().question.parent.parent.id,
-    #                 supplier_id=supplier_answers.first().supplier.id
-    #             )
-    #             if supplier_total_result != total_result.total_weight:
-    #                 total_result.total_weight = supplier_total_result
-    #
-    #             if total_result.questionary.success_weight > total_result.total_weight:
-    #                 total_result.questionary_status = 'rejected'
-    #             else:
-    #                 total_result.questionary_status = 'congratulations'
-    #             total_result.save()
-    #             send_result_notification(total_result)
-    #
-    #     except ValidationError as e:
-    #         return Response(
-    #             {
-    #                 "success": False,
-    #                 "message": 'Error occurred.',
-    #                 "error": str(e),
-    #                 "data": [],
-    #             }, status=status.HTTP_400_BAD_REQUEST
-    #         )
-    #     return Response(
-    #         {
-    #             "success": True,
-    #             "message": 'Successfully checked answers.',
-    #             "error": [],
-    #             "data": [],
-    #         }, status=status.HTTP_200_OK
-    #     )
 
     def get(self, request):
         try:
@@ -1199,8 +1171,15 @@ def get_supplier_answers(request):
     supplier = Supplier.objects.select_related('organization', 'create_by', 'supplier', 'parent_supplier').filter(
         id=supplier_id
     ).first()
+    if not supplier:
+        raise ValidationError("Supplier not found!")
     questionary = event_queryset.filter(parent_id=event_id, general_status='questionary').first()
-
+    if not questionary:
+        raise ValidationError('Questionary not found!')
+    supplier_result, _ = SupplierResult.objects.select_related('questionary', 'supplier').get_or_create(
+        questionary_id=questionary.id,
+        supplier_id=supplier_id
+    )
     categories = []
     with transaction.atomic():
         for category in event_queryset.filter(parent_id=questionary.id, general_status='category'):
@@ -1231,6 +1210,7 @@ def get_supplier_answers(request):
             }
             categories.append(category_obj)
     return {
+        "is_submitted": supplier_result.is_submitted,
         "supplier_id": supplier_id,
         'supplier_name': supplier.name,
         "get_questionary_data": {

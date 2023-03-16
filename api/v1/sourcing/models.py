@@ -226,7 +226,21 @@ class DocumentSourcing(models.Model):
     #     super().save(*args, **kwargs)
 
 
+class SupplierResult(models.Model):
+    questionary = models.ForeignKey(SourcingRequestEvent, on_delete=models.SET_NULL, null=True)
+    supplier = models.ForeignKey(Supplier, on_delete=models.SET_NULL, null=True)
+    # checker = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True)
+    total_weight = models.FloatField(default=0)
+    questionary_status = models.CharField(max_length=15, choices=QuestionaryStatus.choices(), blank=True, null=True)
+    is_submitted = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.supplier.name} - {self.total_weight} > {self.questionary_status}"
+
+
 class SupplierAnswer(models.Model):
+    supplier_result = models.ForeignKey(SupplierResult, on_delete=models.SET_NULL, null=True, blank=True)
     supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE)
     question = models.ForeignKey(SourcingRequestEvent, on_delete=models.CASCADE)
     answer = models.TextField(blank=True, null=True)
@@ -246,17 +260,6 @@ class SupplierAnswer(models.Model):
             raise ValidationError("Answer weight is grater then question weight !!!")
         super().save(*args, **kwargs)
 
-
-class SupplierResult(models.Model):
-    questionary = models.ForeignKey(SourcingRequestEvent, on_delete=models.SET_NULL, null=True)
-    supplier = models.ForeignKey(Supplier, on_delete=models.SET_NULL, null=True)
-    checker = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True)
-    total_weight = models.FloatField(default=0)
-    questionary_status = models.CharField(max_length=15, choices=QuestionaryStatus.choices())
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.supplier.name} - {self.total_weight} > {self.questionary_status}"
 
 
 class SourcingComments(models.Model):
