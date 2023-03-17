@@ -261,7 +261,6 @@ class SupplierAnswer(models.Model):
         super().save(*args, **kwargs)
 
 
-
 class SourcingComments(models.Model):
     sourcingRequest = models.ForeignKey(SourcingRequest, on_delete=models.SET_NULL, null=True)
     sourcingRequestEvent = models.ForeignKey(SourcingRequestEvent, on_delete=models.SET_NULL, null=True)

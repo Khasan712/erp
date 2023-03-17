@@ -872,7 +872,6 @@ class SupplierAnswerView(APIView):
         event_id = data.get('event_id')
         is_submitted = data.get('is_submitted')
         answers = data.get('answers')
-        checker = self.request.user.id
 
         event = SourcingRequestEvent.objects.select_related('sourcing_request', 'creator', 'parent').filter(
             id=event_id, creator__organization_id=user.organization.id, general_status='sourcing_event'

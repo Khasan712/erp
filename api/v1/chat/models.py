@@ -1,3 +1,5 @@
+import uuid
+
 from django.db import models
 
 from .enums import NotificationChoices
@@ -34,9 +36,22 @@ class Notification(DateTimeMixin):
     text = models.TextField(blank=True, null=True)
 
 
+class ChatRoom(DateTimeMixin):
+    room_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    partner1 = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, related_name='chat_partner1')
+    partner2 = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, related_name='chat_partner2')
+    
+    class Meta:
+        verbose_name = 'Chat Room'
+        verbose_name_plural = 'Chat Rooms'
+        
+    def __str__(self):
+        return f'{self.partner1.email} - {self.partner2.email}'
+
+
 class Chat(DateTimeMixin):
-    sender = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='chat_sender')
-    receiver = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='chat_receiver')
+    chat_room = models.ForeignKey(ChatRoom, on_delete=models.SET_NULL, null=True, related_name='chat_room')
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='chat_sender')
 
     sender_last_seen = models.DateTimeField(null=True, blank=True)
     receiver_last_seen = models.DateTimeField(null=True, blank=True)
@@ -48,102 +63,12 @@ class Chat(DateTimeMixin):
     is_active = models.BooleanField(default=True)
     
     def __str__(self):
-        return f'{self.sender.email} with {self.receiver.email}'
+        return f'{self.sender.email}'
 
 
-# Personal (1to1)
-class ChatPersonal(DateTimeMixin, models.Model):
-    sender = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='sender')
-    receiver = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='receiver')
-
-    sender_last_seen = models.DateTimeField(null=True, blank=True)
-    receiver_last_seen = models.DateTimeField(null=True, blank=True)
-
-    is_active = models.BooleanField(default=True)
-
-    @property
-    def get_last_message(self):
-        message = self.chatmessage_set.last()
-        if message:
-            return {
-                "id": message.id,
-                "creator": message.get_creator,
-                "text": message.message,
-                "is_read": message.is_read,
-                "created_at": message.time_created,
-                "files": [file.file.url for file in message.chatmessagefile_set.all()],
-            }
-        return None
-
-    @property
-    def get_last_message_time(self):
-        last_message = self.chatmessage_set.filter(is_active=True).last()
-        if last_message is not None:
-            return last_message.time_created
-        return self.time_created
-
-    @property
-    def unread_messages_count(self):
-        return self.chatmessage_set.filter(is_active=True, is_read=False).count()
-
-    def __str__(self): return f"{ self.sender.first_name } { self.sender.last_name } -> { self.receiver.first_name } { self.receiver.last_name }"
-    
-
-# Messages
-class ChatMessage(DateTimeMixin, models.Model):
-    LIST_MESSAGE_PERSONAL_CREATOR = (
-        ('sender', 'Sender'),
-        ('receiver', 'Receiver'),
-    )
-
-    chat_personal = models.ForeignKey(ChatPersonal, models.CASCADE, null=True, blank=True)
-    chat_personal_message_creator = models.ForeignKey("users.User", models.CASCADE, null=True, blank=True)
-    answer_for = models.ForeignKey('self', models.DO_NOTHING, null=True, blank=True)  # TODO: use this
-
-    is_read = models.BooleanField(default=False)
-
-    message = models.TextField()
-    is_active = models.BooleanField(default=True)
-
-    @property
-    def get_chat_id(self):
-        if self.chat_personal:
-            return self.chat_personal.id
-        return None
-
-    @property
-    def get_receivers_id(self):
-        if self.chat_personal:
-            if self.chat_personal_message_creator_id != self.chat_personal.sender_id:
-                return (self.chat_personal.sender_id, ) 
-            return self.chat_personal.receiver_id
-        return None
-
-    @property
-    def get_sender_user(self):
-        return self.chat_personal.sender if self.chat_personal_message_creator_id != self.chat_personal.sender_id else self.chat_personal.receiver
-
-    @property
-    def get_receiver_user(self):
-        return self.chat_personal.sender if self.chat_personal_message_creator_id == self.chat_personal.receiver_id else self.chat_personal.receiver
-
-    def __str__(self):
-        if self.chat_personal:
-            return f"Personal: { self.chat_personal.id }"
-
-    @property
-    def get_creator(self):
-        if self.chat_personal and self.chat_personal_message_creator:
-            return self.chat_personal_message_creator.get_short_data
-        else:
-            return {}
-
-    @property
-    def get_files(self):
-        return []
-    
-    
 class ChatFile(models.Model):
     chat = models.ForeignKey(Chat, on_delete=models.SET_NULL, null=True)
-    chat_message = models.ForeignKey(ChatMessage, on_delete=models.SET_NULL, null=True)
     chat_file = models.FileField(upload_to='chat/messages/files')
+    
+    def __str__(self):
+        return f'{self.chat} {self.chat.user.email}'
