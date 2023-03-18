@@ -928,26 +928,27 @@ class SupplierAnswerView(APIView):
                             supplier_answer.weight = float(answer['weight'])
                             supplier_answer.save()
 
-                supplier_total_result = supplier_answers.aggregate(foo=Coalesce(Sum('weight'), 0.0))['foo']
-                total_result, create = SupplierResult.objects.get_or_create(
-                    questionary_id=supplier_answers.first().question.parent.parent.id,
-                    supplier_id=supplier_answers.first().supplier.id
-                )
-                if supplier_total_result != total_result.total_weight:
-                    total_result.total_weight = supplier_total_result
+                # supplier_total_result = supplier_answers.aggregate(foo=Coalesce(Sum('weight', output_field=FloatField()), 0.0))['foo']
+                # total_result, create = SupplierResult.objects.get_or_create(
+                #     questionary_id=supplier_answers.first().question.parent.parent.id,
+                #     supplier_id=supplier_answers.first().supplier.id
+                # )
+                # if supplier_total_result != total_result.total_weight:
+                #     total_result.total_weight = supplier_total_result
+                #
+                # if total_result.questionary.success_weight > total_result.total_weight:
+                #     total_result.questionary_status = 'rejected'
+                # else:
+                #     total_result.questionary_status = 'congratulations'
+                # total_result.save()
 
-                if total_result.questionary.success_weight > total_result.total_weight:
-                    total_result.questionary_status = 'rejected'
-                else:
-                    total_result.questionary_status = 'congratulations'
-                total_result.save()
-                send_result_notification(total_result, user.id)
         if is_submitted:
             total_weight = supplier_answers.aggregate(foo=Coalesce(Sum('weight', output_field=FloatField()), 0.0))['foo']
             supplier_result.is_submitted = True
             supplier_result.total_weight = total_weight
             supplier_result.questionary_status = 'congratulations' if total_weight >= supplier_result.success_weight else 'rejected'
             supplier_result.save()
+            # send_result_notification(supplier_result, user.id)
 
     def post(self, request):
         try:
