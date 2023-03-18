@@ -1,4 +1,6 @@
 from django.db import models
+from django.core.exceptions import ValidationError
+
 from api.v1.users.managers import (
     UserManager,
     SourcingDirectorManager
@@ -20,7 +22,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     city = models.CharField(max_length=40)
     country = models.CharField(max_length=50)
     role = models.CharField(max_length=22, choices=UserRoles.choices())
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
@@ -33,6 +35,11 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self) -> str:
         return f'{self.email}'
+
+    def save(self, *args, **kwargs):
+        if self.role != 'admin' and not self.organization:
+            raise ValidationError('User must be choose one organization!!!')
+        super().save(*args, **kwargs)
 
     # @property
     # def token(self):
