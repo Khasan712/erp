@@ -943,7 +943,7 @@ class SupplierAnswerView(APIView):
                 total_result.save()
                 send_result_notification(total_result, user.id)
         if is_submitted:
-            total_weight = supplier_answers.aggregate(foo=Coalesce(Sum('weight', output_field=FloatField()), 0))['foo']
+            total_weight = supplier_answers.aggregate(foo=Coalesce(Sum('weight', output_field=FloatField()), 0.0))['foo']
             supplier_result.is_submitted = True
             supplier_result.total_weight = total_weight
             supplier_result.questionary_status = 'congratulations' if total_weight >= supplier_result.success_weight else 'rejected'
