@@ -15,9 +15,9 @@ def make_contract_noti(sender_id, receiver_id, contract_id, text):
     )
 
 
-def send_result_notification(total_result):
+def send_result_notification(total_result, user_id):
     Notification.objects.create(
-        # sender_id=total_result.checker.id,
+        sender_id=user_id,
         receiver_id=total_result.supplier.supplier.id,
         text=total_result.questionary_status
     )
