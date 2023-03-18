@@ -1,26 +1,35 @@
-import ujson
+import jwt
+import xlwt
+import openpyxl
+from django.conf import settings
+from django.http import HttpResponse
+from django.core.exceptions import ValidationError
 from django.contrib.sites.shortcuts import get_current_site
-from django.shortcuts import render
-from rest_framework import generics, status, permissions
-from rest_framework.response import Response
-from rest_framework.views import APIView
 
-from api.v1.commons.pagination import make_pagination
-from api.v1.commons.views import string_to_date, exception_response, get_serializer_errors, raise_exception_response, \
-    object_not_found_response, serializer_valid_response, get_serializer_valid_response
+from rest_framework import generics, status, permissions
+from rest_framework.views import APIView
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from rest_framework.response import Response
+
+from django.db import transaction
+from django.db.models import Avg, Sum, Count, Q, FloatField
+from django.db.models.functions import Coalesce
+
+from .tasks import send_message_to_suppliers
+from api.v1.users.utils import send_message_register
 from api.v1.users.models import User
 from api.v1.users.services import make_errors
-from django.db import transaction
-from django.core.exceptions import ValidationError
-from django.db.models.functions import Coalesce
-from django.db.models import Avg, Sum, Count, Q
-import jwt
-from django.conf import settings
-import xlwt
-from django.http import HttpResponse
-import openpyxl
 from api.v1.suppliers.models import Supplier
-from rest_framework.parsers import FileUploadParser
+from api.v1.commons.pagination import make_pagination
+from api.v1.commons.views import (
+    string_to_date,
+    exception_response,
+    get_serializer_errors,
+    raise_exception_response,
+    object_not_found_response,
+    serializer_valid_response,
+    get_serializer_valid_response
+)
 from api.v1.sourcing.models import (
     CategoryRequest,
     SourcingComments,
@@ -29,9 +38,15 @@ from api.v1.sourcing.models import (
     SupplierAnswer,
     SupplierResult, SourcingRequestEventSuppliers, DocumentSourcing, SourcingRequestService
 )
-from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from api.v1.users.utils import send_message_register
-from .tasks import send_message_to_suppliers
+from api.v1.users.permissions import (
+    IsSupplier,
+    IsCategoryManager,
+    IsSourcingDirector, IsContractAdministrator, IsSourcingAdministrator
+)
+from api.v1.chat.views import (
+    send_result_notification
+)
+
 from .serializers import (
     CategoryRequestSerializer,
     EventCategorySerializer,
@@ -55,14 +70,6 @@ from .serializers import (
     SourcingRequestConsultantSerializers, EventInfoUpdateSerializer, EventUpdateSerializer,
     EventSupplierUpdateSerializer, SourcingRequestAssignedListSerializer, SourcingEventSupplierQuestionarySerializer,
     SupplierAnswerInEventSerializer
-)
-from api.v1.users.permissions import (
-    IsSupplier,
-    IsCategoryManager,
-    IsSourcingDirector, IsContractAdministrator, IsSourcingAdministrator
-)
-from api.v1.chat.views import (
-    send_result_notification
 )
 
 
@@ -936,7 +943,7 @@ class SupplierAnswerView(APIView):
                 total_result.save()
                 send_result_notification(total_result, user.id)
         if is_submitted:
-            total_weight = supplier_answers.aggregate(foo=Coalesce(Sum('weight'), 0))['foo']
+            total_weight = supplier_answers.aggregate(foo=Coalesce(Sum('weight', output_field=FloatField()), 0))['foo']
             supplier_result.is_submitted = True
             supplier_result.total_weight = total_weight
             supplier_result.questionary_status = 'congratulations' if total_weight >= supplier_result.success_weight else 'rejected'
