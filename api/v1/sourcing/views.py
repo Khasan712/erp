@@ -928,20 +928,6 @@ class SupplierAnswerView(APIView):
                             supplier_answer.weight = float(answer['weight'])
                             supplier_answer.save()
 
-                # supplier_total_result = supplier_answers.aggregate(foo=Coalesce(Sum('weight', output_field=FloatField()), 0.0))['foo']
-                # total_result, create = SupplierResult.objects.get_or_create(
-                #     questionary_id=supplier_answers.first().question.parent.parent.id,
-                #     supplier_id=supplier_answers.first().supplier.id
-                # )
-                # if supplier_total_result != total_result.total_weight:
-                #     total_result.total_weight = supplier_total_result
-                #
-                # if total_result.questionary.success_weight > total_result.total_weight:
-                #     total_result.questionary_status = 'rejected'
-                # else:
-                #     total_result.questionary_status = 'congratulations'
-                # total_result.save()
-
         if is_submitted:
             total_weight = supplier_answers.aggregate(foo=Coalesce(Sum('weight', output_field=FloatField()), 0.0))['foo']
             supplier_result.is_submitted = True

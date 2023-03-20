@@ -32,7 +32,7 @@ urlpatterns = [
     path('api/v1/organization/', include('api.v1.organization.urls')),
     path('api/v1/users/', include('api.v1.users.urls')),
     path('api/v1/items/', include('api.v1.items.urls')),
-    # path('api/v1/chat/', include('api.v1.chat.urls')),
+    path('api/v1/chat/', include('api.v1.chat.urls')),
     path('api/v1/services/', include('api.v1.services.urls')),
     path('api/v1/folders/', include('api.v1.folders.urls')),
 
