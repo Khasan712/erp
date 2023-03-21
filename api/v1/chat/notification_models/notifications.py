@@ -27,7 +27,7 @@ class FolderOrDocumentAccessNotification(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f'{self.receiver.email} - {self.access_folder_or_document.access_code}'
+        return f'{self.receiver.email} - {self.access_folder_or_document}'
 
     def clean(self):
         if self.access_folder_or_document.creator.id != self.sender.id or self.access_folder_or_document.user.id != self.receiver.id:

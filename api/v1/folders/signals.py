@@ -20,18 +20,18 @@ def give_access_for_user(document_folder: int, users: list):
     pass
 
 
-@receiver(post_save, sender=GiveAccessToDocumentFolder)
-def folder_post_save_signal(sender, instance, created, **kwargs):
-    if created:
-        instance.access_code = uuid.uuid4()
-        instance.save()
+# @receiver(post_save, sender=GiveAccessToDocumentFolder)
+# def folder_post_save_signal(sender, instance, created, **kwargs):
+#     if created:
+#         instance.access_code = uuid.uuid4()
+#         instance.save()
 
 
-@receiver(post_save, sender=GiveAccessCart)
-def shared_link_cart(sender, instance, created, **kwargs):
-    if created:
-        instance.access_code = uuid.uuid4()
-        instance.save()
+# @receiver(post_save, sender=GiveAccessCart)
+# def shared_link_cart(sender, instance, created, **kwargs):
+#     if created:
+#         instance.access_code = uuid.uuid4()
+#         instance.save()
 
 
 # @receiver(post_save, sender=Folder)

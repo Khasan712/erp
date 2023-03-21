@@ -66,7 +66,13 @@ class GedFolderOrDocumentSerializer(serializers.ModelSerializer):
 class GiveAccessToDocumentFolderSerializer(serializers.ModelSerializer):
     class Meta:
         model = GiveAccessToDocumentFolder
-        fields = ('id', 'user', 'folder_or_document', 'out_side_person', 'editable', 'expiration_date')
+        fields = ('id', 'give_access_cart', 'folder_or_document')
+
+    def to_representation(self, instance):
+        res = super().to_representation(instance)
+        res['give_access_cart'] = {
+
+        }
 
 
 class ShareLinkGiveAccessToDocumentFolderSerializer(serializers.ModelSerializer):
@@ -222,3 +228,22 @@ class GiveAccessCartSharedSerializer(serializers.ModelSerializer):
     class Meta:
         model = GiveAccessCart
         fields = ('id', 'creator', 'out_side_person', 'created_at')
+
+
+class GiveAccessCartSerializer(serializers.ModelSerializer):
+
+    user = serializers.SerializerMethodField()
+    class Meta:
+        model = GiveAccessCart
+        fields = ('id', 'creator', 'user', 'editable', 'expiration_date', 'created_at')
+
+    def get_user(self, instance):
+        if instance.internal:
+            return {
+                'id': instance.internal.id,
+                'first_name': instance.internal.first_name,
+                'last_name': instance.internal.last_name,
+                'email': instance.internal.email,
+            }
+        else:
+            return instance.external

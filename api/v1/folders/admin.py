@@ -5,7 +5,6 @@ from .models import (
     GiveAccessCart
 )
 
-admin.site.register(GiveAccessCart)
 
 @admin.register(FolderOrDocument)
 class FolderOrDocumentAdmin(admin.ModelAdmin):
@@ -15,8 +14,14 @@ class FolderOrDocumentAdmin(admin.ModelAdmin):
 @admin.register(GiveAccessToDocumentFolder)
 class GiveAccessToDocumentFolderAdmin(admin.ModelAdmin):
     list_display = (
-        'id', 'creator', 'user', 'folder_or_document', 'editable', 'expiration_date', 'created_at', 'updated_at'
+        'id', 'folder_or_document', 'give_access_cart',
     )
 
+
+@admin.register(GiveAccessCart)
+class GiveAccessCartAdmin(admin.ModelAdmin):
+    list_display = (
+        'id', 'creator', 'internal', 'external', 'access_code', 'editable', 'expiration_date', 'created_at'
+    )
 
 

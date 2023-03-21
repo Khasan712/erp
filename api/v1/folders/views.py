@@ -1,5 +1,5 @@
 from itertools import chain
-from django.conf import settings
+import ujson
 from django.core.exceptions import ValidationError
 from django.db import transaction
 import re
@@ -15,6 +15,7 @@ from .serializers import (
     ListOutsideGiveAccessToDocumentFolderSerializer, UpdateOutsideInvitesDocumentFolderSerializer,
     GetSharedLinkInviteSerializer, GetSharedLinkDocumentOrFolderSerializer,
     ShareLinkGiveAccessToDocumentFolderSerializer, GiveAccessCartSharedSerializer, SharedLinkListSerializer,
+    GiveAccessCartSerializer,
 )
 from api.v1.users.models import User
 from .models import (
@@ -291,13 +292,16 @@ class TrashedDocumentFolderApi(views.APIView):
 
 
 class GiveAccessToDocumentFolderApi(views.APIView):
-    """  Give access for inside or outside users """
+    """  Give access for internal or external users """
     permission_classes = (permissions.IsAuthenticated,)
+
+    def get_give_access_carts_queryset(self):
+        return GiveAccessCart.objects.select_related('creator', 'internal')
 
     def get_queryset(self):
         queryset = GiveAccessToDocumentFolder.objects.select_related(
-            'organization', 'creator', 'user', 'folder_or_document'
-        ).filter(organization_id=self.request.user.organization.id, folder_or_document__is_trashed=False)
+            'folder_or_document', 'give_access_cart'
+        ).filter(folder_or_document__is_trashed=False)
         return queryset
 
     def get_object(self):
@@ -344,85 +348,88 @@ class GiveAccessToDocumentFolderApi(views.APIView):
             return self.get_queryset().filter(creator_id=user.id, out_side_person=outside_user)
         return 'Send user=`ID` or email=`email` in the params.'
 
-    def give_access_for_user(
-            self, users: list, folders_or_documents: list, editable: bool, expiration_date: str,
-    ):
+    def user_carts(self,):
+        user = self.request.data.get("user")
+        if isinstance(user, int):
+            return self.get_give_access_carts_queryset().filter(creator_id=self.request.user.id, internal_id=user)
+        return self.get_give_access_carts_queryset().filter(creator_id=self.request.user.id, external=user)
+
+    def user_cart(self):
+        cart_id = self.request.data.get('cart_id')
+        return self.get_queryset().filter(give_access_cart_id=cart_id, give_access_cart__creator_id=self.request.user.id)
+
+
+    def give_access_for_user(self):
+        """
+        Give access to folders or documents for internal or external users.
+        If user is external, it will receive email notification
+        """
+        data = self.request.data
+        users = list(dict.fromkeys(data.get('users')))
+        folders_or_documents = list(dict.fromkeys(data.get('folder_or_document')))
+        editable = data.get('editable')
+        expiration_date = data.get('expiration_date')
         with transaction.atomic():
             creator = self.request.user
             documents_and_folders = FolderOrDocument.objects.select_related('organization', 'creator', 'parent')
-            users_obj = User.objects.select_related('organization')
-            email_and_tokens = []
+            external_users_email = []
             for user in users:
+                give_access_cart = GiveAccessCart.objects.create(
+                    creator_id=creator.id, editable=editable, expiration_date=expiration_date
+                )
                 if isinstance(user, str):
-                    out_side_person = self.validate_email(user)
-                    if not out_side_person:
-                        raise f"{user} is not valid email"
-                    access_cart = GiveAccessCart.objects.create(
-                        organization_id=creator.organization.id,
-                        creator_id=creator.id,
-                        out_side_person=user
-                    )
+                    external = self.validate_email(user)
+                    if not external:
+                        raise ValueError(f"{user} is not valid email")
+                    give_access_cart.external = user
+                    give_access_cart.save()
+                elif isinstance(user, int):
+                    user_obj = User.objects.select_related('organization').filter(id=user, organization_id=creator.organization.id).first()
+                    if not user_obj:
+                        raise ValueError(f'{user} is not valid user id.')
+                    give_access_cart.internal = user_obj
+                    give_access_cart.save()
+
                 for folder_or_document in folders_or_documents:
                     folder_document = documents_and_folders.filter(id=folder_or_document).first()
                     if not folder_document:
-                        raise f'{folder_or_document} is not valid document or folder.'
-                    if isinstance(user, int):
-                        user_obj = users_obj.filter(id=user).first()
-                        if not user_obj:
-                            raise ValidationError(message=f'{user} is not valid user id.')
-                        data = {
-                            'user': user,
-                            'folder_or_document': folder_or_document,
-                            'editable': editable,
-                            'expiration_date': expiration_date,
-                        }
-                        serializer = GiveAccessToDocumentFolderSerializer(data=data)
-                        if not serializer.is_valid():
-                            return make_errors(serializer.errors)
-                        serializer.save(creator_id=creator.id, organization_id=creator.organization.id)
-                        folder_or_document_access_notification(creator.id, user, serializer.data.get('id'))
-                    if isinstance(user, str):
-                        data = {
-                            'out_side_person': user,
-                            'folder_or_document': folder_or_document,
-                            'editable': editable,
-                            'expiration_date': expiration_date,
-                        }
-                        serializer = ShareLinkGiveAccessToDocumentFolderSerializer(data=data)
-                        if not serializer.is_valid():
-                            return make_errors(serializer.errors)
-                        serializer.save(
-                            creator_id=creator.id, organization_id=creator.organization.id,
-                            shared_link_cart_id=access_cart.id
-                        )
+                        raise ValueError(f'{folder_or_document} is not valid document or folder.')
+                    data = {
+                        'folder_or_document': folder_or_document,
+                        'give_access_cart': give_access_cart.id,
+                    }
+                    serializer = GiveAccessToDocumentFolderSerializer(data=data)
+                    if not serializer.is_valid():
+                        raise ValueError(serializer.errors)
+                    serializer.save()
+                    # folder_or_document_access_notification(creator.id, user, serializer.data.get('id'))
                 if isinstance(user, str):
                     token_and_email = {
-                        'token': access_cart.access_code,
+                        'token': give_access_cart.access_code,
                         'email': user,
-                        'cart_id': access_cart.id
+                        'cart_id': give_access_cart.id
                     }
-                    email_and_tokens.append(token_and_email)
-            if email_and_tokens:
-                send_shared_link_email(email_and_tokens)
+                    external_users_email.append(token_and_email)
+
+            if external_users_email:
+                send_shared_link_email(external_users_email)
         return True
 
     def post(self, request):
+        """
+        {
+            "users": [ID or emails],
+            "folder_or_document": [5,4,7,9],
+            "editable": true,
+            "expiration_date": "2023-02-01"
+        }
+        """
         try:
-            data = self.request.data
-            access_users = data.get('users')
-            folders_or_documents = data.get('folder_or_document')
-            editable = data.get('editable')
-            expiration_date = data.get('expiration_date')
-            give_access = self.give_access_for_user(
-                access_users, folders_or_documents, editable, expiration_date
-            )
-            if give_access != True:
+            if not self.give_access_for_user():
                 return Response(
                     {
                         'success': False,
-                        'message': 'Error occurred.',
-                        'error': give_access,
-                        'data': []
+                        'error': self.give_access_for_user(),
                     }
                 )
         except Exception as e:
@@ -431,22 +438,26 @@ class GiveAccessToDocumentFolderApi(views.APIView):
             return Response(
                 {
                     'success': True,
-                    'message': 'Data created successfully.',
-                    'error': [],
-                    'data': []
                 }, status=status.HTTP_201_CREATED
             )
 
     def get(self, request):
         try:
-            invited_user = self.get_filtered_queryset()
-            if isinstance(invited_user, str):
-                return Response(get_error_response(invited_user))
-            serializer = ListGiveAccessToDocumentFolderSerializer
+            request_data = self.request.data
+            method = request_data.get("method")
+            match method:
+                case 'user.carts':
+                    """ Get carts """
+                    user_carts = self.user_carts()
+                    serializer = GiveAccessCartSerializer
+                    return Response(make_pagination(request, serializer, user_carts))
+                case 'user.cart':
+                    """ Get cart """
+                    cart_items = self.user_cart()
+                    serializer = GiveAccessCartSerializer
+                    return Response(make_pagination(request, serializer, cart_items))
         except Exception as e:
             return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
-        else:
-            return Response(make_pagination(request, serializer, invited_user))
 
     def patch(self, request):
         try:
@@ -964,15 +975,13 @@ class SharedLinkAPi(views.APIView):
         return GiveAccessToDocumentFolder.objects.select_related('organization', 'creator', 'user', 'folder_or_document')
 
     def get_cart_queryset(self):
-        return GiveAccessCart.objects.select_related('organization', 'creator')
+        return GiveAccessCart.objects.select_related('organization', 'creator', 'user')
 
     def give_access_cart_queryset(self):
         return GiveAccessCart.objects.select_related('organization', 'creator')
 
     def get_user_queryset(self):
-        return User.objects.select_related('organization').filter(
-            cart_creator__out_side_person=self.get_cart().out_side_person
-        )
+        return User.objects.select_related('organization')
 
     def get_params(self):
         params = self.request.query_params
@@ -1074,9 +1083,33 @@ class SharedLinkAPi(views.APIView):
                 'queryset': self.get_folder_or_document_queryset().filter(parent_id=item_obj.id)
             }
 
+
+    def main_page(self):
+        params = self.request.query_params
+        token = params.get('token')
+        out_side_person = self.get_cart_queryset().filter(access_code=token).first()
+        if out_side_person:
+            users = self.get_user_queryset().filter(cart_creator__out_side_person=out_side_person.out_side_person).values(
+                'id', 'organization__name', 'first_name', 'last_name', 'email'
+            )
+            return users
+
+
     def get(self, request):
         try:
             params = self.get_params()
+            request_data = self.request.data
+            method = request_data.get('method')
+            match method:
+                case 'main.page':
+                    """ Return all inventors list """
+                    return Response({
+                        'success': True,
+                        'data': make_pagination()
+                        # "data": ujson.dumps([i for i in self.main_page()]) if self.main_page() else None
+                    })
+
+
             invite_obj = self.check_token()
             if not params:
                 return Response(object_not_found_response(), status=status.HTTP_400_BAD_REQUEST)
