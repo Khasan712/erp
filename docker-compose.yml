@@ -11,58 +11,57 @@ services:
       - static_files:/app/staticfiles
       - static:/app/static
       - media:/app/media
-#      - /tmp/app/mysqld:/run/mysqld
-    command: python manage.py runserver 0.0.0.0:8001
+      - /tmp/app/mysqld:/run/mysqld
     env_file:
       - .env
-#    depends_on:
-#      - mysql
+    depends_on:
+      - mysql
 
 
-#  nginx:
-#    build: ./nginx
-#    container_name: nginx
-#    restart: always
-#    volumes:
-#      - ./nginx/conf/:/etc/nginx/conf.d/:rw
-#      - static_files:/home/app/staticfiles/
-#      - static:/home/app/static/
-#      - media:/home/app/media/
-#      - .:/app
-#    depends_on:
-#      - web
-#    ports:
-#      - 1080:80
-#      - 1443:443
-#    env_file:
-#      - .env
+  nginx:
+    build: ./nginx
+    container_name: nginx
+    restart: always
+    volumes:
+      - ./nginx/conf/:/etc/nginx/conf.d/:rw
+      - static_files:/home/app/staticfiles/
+      - static:/home/app/static/
+      - media:/home/app/media/
+      - .:/app
+    depends_on:
+      - web
+    ports:
+      - 1080:80
+      - 1443:443
+    env_file:
+      - .env
 
 
-#  mysql:
-#    image: mysql:latest
-#    container_name: mysql
-#    restart: always
-#    environment:
-#      MYSQL_USER: ${DB_USER}
-#      MYSQL_PASSWORD: ${DB_PASSWORD}
-#      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-#      MYSQL_DATABASE: ${DB_NAME}
-#    volumes:
-#      - /tmp/app/mysqld:/var/run/mysqld
-#      - ./erp_mysql:/var/lib/mysql
-#    ports:
-#      - 3307:3306
+  mysql:
+    image: mysql:latest
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+    volumes:
+      - /tmp/app/mysqld:/var/run/mysqld
+      - ./erp_mysql:/var/lib/mysql
+    ports:
+      - 3307:3306
 
 
   redis:
     container_name: erp_redis
     image: redis:alpine
     ports:
-      - 6380:6379
+      - 6379:6379
     volumes:
       - redis_data:/data
     depends_on:
-#      - mysql
+      - mysql
       - web
 
 
@@ -74,11 +73,11 @@ services:
     command: celery -A config worker -l info
     volumes:
       - .:/app
-#      - /tmp/app/mysqld:/run/mysqld
+      - /tmp/app/mysqld:/run/mysqld
     depends_on:
       - web
       - redis
-#      - mysql
+      - mysql
 
 
   celery-beat:
@@ -89,12 +88,12 @@ services:
     command: celery -A config beat -l info
     volumes:
       - .:/app
-#      - /tmp/app/mysqld:/run/mysqld
+      - /tmp/app/mysqld:/run/mysqld
     depends_on:
       - web
       - redis
       - celery-worker
-#      - mysql
+      - mysql
 
 
 volumes:
@@ -102,4 +101,3 @@ volumes:
   static:
   media:
   redis_data:
-
