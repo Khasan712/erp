@@ -40,6 +40,12 @@ class GiveAccessCart(models.Model):
     def __str__(self):
         return f"{self.creator} {self.out_side_person}"
 
+    # def save(self, *args, **kwargs):
+    #     if not self.organization:
+    #         print(self.creator.organization.id)
+    #         self.organization = self.creator.organization
+    #     super().save(*args, **kwargs)
+
 
 class GiveAccessToDocumentFolder(models.Model):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)

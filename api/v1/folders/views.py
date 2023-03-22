@@ -1,3 +1,4 @@
+import uuid
 from itertools import chain
 import ujson
 from django.core.exceptions import ValidationError
@@ -372,47 +373,61 @@ class GiveAccessToDocumentFolderApi(views.APIView):
         with transaction.atomic():
             creator = self.request.user
             documents_and_folders = FolderOrDocument.objects.select_related('organization', 'creator', 'parent')
-            external_users_email = []
+            users_obj = User.objects.select_related('organization')
+            email_and_tokens = []
+            users = list(set(users))
+            folders_or_documents = list(set(folders_or_documents))
             for user in users:
-                give_access_cart = GiveAccessCart.objects.create(
-                    creator_id=creator.id, editable=editable, expiration_date=expiration_date
-                )
                 if isinstance(user, str):
-                    external = self.validate_email(user)
-                    if not external:
+                    out_side_person = self.validate_email(user)
+                    if not out_side_person:
                         raise ValueError(f"{user} is not valid email")
-                    give_access_cart.external = user
-                    give_access_cart.save()
-                elif isinstance(user, int):
-                    user_obj = User.objects.select_related('organization').filter(id=user, organization_id=creator.organization.id).first()
-                    if not user_obj:
-                        raise ValueError(f'{user} is not valid user id.')
-                    give_access_cart.internal = user_obj
-                    give_access_cart.save()
-
+                    access_code = uuid.uuid4()
+                    access_cart = GiveAccessCart.objects.create(
+                        creator_id=creator.id, out_side_person=user, access_code=access_code,
+                        organization_id=creator.organization.id
+                    )
+                    token_and_email = {
+                        'token': access_code,
+                        'email': user,
+                        'cart_id': access_cart.id
+                    }
+                    email_and_tokens.append(token_and_email)
                 for folder_or_document in folders_or_documents:
                     folder_document = documents_and_folders.filter(id=folder_or_document).first()
                     if not folder_document:
                         raise ValueError(f'{folder_or_document} is not valid document or folder.')
-                    data = {
-                        'folder_or_document': folder_or_document,
-                        'give_access_cart': give_access_cart.id,
-                    }
-                    serializer = GiveAccessToDocumentFolderSerializer(data=data)
-                    if not serializer.is_valid():
-                        raise ValueError(serializer.errors)
-                    serializer.save()
-                    # folder_or_document_access_notification(creator.id, user, serializer.data.get('id'))
-                if isinstance(user, str):
-                    token_and_email = {
-                        'token': give_access_cart.access_code,
-                        'email': user,
-                        'cart_id': give_access_cart.id
-                    }
-                    external_users_email.append(token_and_email)
-
-            if external_users_email:
-                send_shared_link_email(external_users_email)
+                    if isinstance(user, int):
+                        user_obj = users_obj.filter(id=user).first()
+                        if not user_obj:
+                            raise ValueError(message=f'{user} is not valid user id.')
+                        data = {
+                            'user': user,
+                            'folder_or_document': folder_or_document,
+                            'editable': editable,
+                            'expiration_date': expiration_date,
+                        }
+                        serializer = GiveAccessToDocumentFolderSerializer(data=data)
+                        if not serializer.is_valid():
+                            raise ValueError(make_errors(serializer.errors))
+                        serializer.save(creator_id=creator.id, organization_id=creator.organization.id)
+                        # folder_or_document_access_notification(creator.id, user, serializer.data.get('id'))
+                    if isinstance(user, str):
+                        data = {
+                            'out_side_person': user,
+                            'folder_or_document': folder_or_document,
+                            'editable': editable,
+                            'expiration_date': expiration_date,
+                        }
+                        serializer = ShareLinkGiveAccessToDocumentFolderSerializer(data=data)
+                        if not serializer.is_valid():
+                            return make_errors(serializer.errors)
+                        serializer.save(
+                            creator_id=creator.id, organization_id=creator.organization.id,
+                            shared_link_cart_id=access_cart.id, access_code=access_code
+                        )
+            if email_and_tokens:
+                send_shared_link_email(email_and_tokens)
         return True
 
     def post(self, request):
