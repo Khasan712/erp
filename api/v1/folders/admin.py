@@ -14,14 +14,14 @@ class FolderOrDocumentAdmin(admin.ModelAdmin):
 @admin.register(GiveAccessToDocumentFolder)
 class GiveAccessToDocumentFolderAdmin(admin.ModelAdmin):
     list_display = (
-        'id', 'folder_or_document', 'give_access_cart',
+        'id', 'organization', 'creator', 'user', 'folder_or_document', 'shared_link_cart', 'out_side_person', 'editable', 'expiration_date'
     )
 
 
 @admin.register(GiveAccessCart)
 class GiveAccessCartAdmin(admin.ModelAdmin):
     list_display = (
-        'id', 'creator', 'internal', 'external', 'access_code', 'editable', 'expiration_date', 'created_at'
+        'id', 'organization', 'creator', 'out_side_person', 'access_code', 'created_at'
     )
 
 
