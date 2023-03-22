@@ -1178,7 +1178,7 @@ class SharedLinkAPi(views.APIView):
                 })
             match params.get("method"):
                 case 'users.list':
-                    # params => token, method=users.list
+                    """ params => token, method=users.list """
                     users = self.get_users_list(params.get("token"))
                     serializer = FolderDocumentUsersSerializer
                     return Response(make_pagination(request, serializer, users), status=status.HTTP_200_OK)
