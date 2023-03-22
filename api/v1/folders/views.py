@@ -1083,8 +1083,6 @@ class SharedLinkAPi(views.APIView):
                 'queryset': self.get_folder_or_document_queryset().filter(parent_id=item_obj.id)
             }
 
-<<<<<<< HEAD
-
     def main_page(self):
         params = self.request.query_params
         token = params.get('token')
@@ -1095,7 +1093,6 @@ class SharedLinkAPi(views.APIView):
             )
             return users
 
-=======
     def get_users_list(self, token):
         access_cart = self.get_cart_queryset().filter(access_code=token).first()
         if not access_cart:
@@ -1127,50 +1124,12 @@ class SharedLinkAPi(views.APIView):
         return FolderOrDocument.objects.select_related('organization', 'creator', 'parent').filter(
             parent_id=item_id
         )
->>>>>>> 5f45d52 (External user open folder bug fixed)
 
     def get(self, request):
         try:
             params = self.get_params()
-<<<<<<< HEAD
             request_data = self.request.data
             method = request_data.get('method')
-            match method:
-                case 'main.page':
-                    """ Return all inventors list """
-                    return Response({
-                        'success': True,
-                        'data': make_pagination()
-                        # "data": ujson.dumps([i for i in self.main_page()]) if self.main_page() else None
-                    })
-
-
-            invite_obj = self.check_token()
-            if not params:
-                return Response(object_not_found_response(), status=status.HTTP_400_BAD_REQUEST)
-            if params.get('method') == 'main_page':
-                users = self.get_user_queryset().distinct()
-                serializer = FolderDocumentUsersSerializer
-                return Response(make_pagination(request, serializer, users), status=status.HTTP_200_OK)
-            if params.get('user_carts'):
-                inviter = self.get_user_queryset().filter(id=params.get('user_carts')).first()
-                inviter_shared_links = self.give_access_cart_queryset().filter(
-                    creator_id=inviter.id, out_side_person=self.get_cart().out_side_person
-                )
-                serializer = GiveAccessCartSharedSerializer
-                return Response(make_pagination(request, serializer, inviter_shared_links), status=status.HTTP_200_OK)
-            if params.get('cart_id'):
-                folders = self.get_given_access_queryset().filter(shared_link_cart_id=int(params.get('cart_id')))
-                serializer = SharedLinkListSerializer
-                return Response(make_pagination(request, serializer, folders), status=status.HTTP_200_OK)
-            if not params['item_id']:
-                serializer = GetSharedLinkInviteSerializer(invite_obj)
-                return Response(serializer_valid_response(serializer), status=status.HTTP_200_OK)
-            validate_item = self.validate_item()
-            if not validate_item:
-                return Response(object_not_found_response(), status=status.HTTP_400_BAD_REQUEST)
-            serializer = GetSharedLinkDocumentOrFolderSerializer
-=======
             if not params.get("method") or params.get("method") not in ('users.list', 'user.carts', 'user.cart', 'open.folder'):
                 return Response({
                     "success": False,
@@ -1202,16 +1161,8 @@ class SharedLinkAPi(views.APIView):
             # if not validate_item:
             #     return Response(object_not_found_response(), status=status.HTTP_400_BAD_REQUEST)
             # serializer = GetSharedLinkDocumentOrFolderSerializer
->>>>>>> 5f45d52 (External user open folder bug fixed)
         except Exception as e:
             return Response(exception_response(e), status=status.HTTP_400_BAD_REQUEST)
-        # else:
-        #     response = make_pagination(request, serializer, validate_item['queryset'])
-        #     response['invite_obj'] = {
-        #         'invite_id': invite_obj.id,
-        #         'editable': invite_obj.editable,
-        #     }
-        #     return Response(response, status=status.HTTP_200_OK)
 
     def patch(self, request):
         """ Item_id and  """

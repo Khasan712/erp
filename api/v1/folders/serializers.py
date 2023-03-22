@@ -231,8 +231,17 @@ class GiveAccessCartSharedSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = GiveAccessCart
-<<<<<<< HEAD
-        fields = ('id', 'creator', 'out_side_person', 'created_at')
+        fields = ('id', 'out_side_person', 'created_at', 'editable', 'expiration_date')
+
+    def get_editable(self, instance):
+        return GiveAccessToDocumentFolder.objects.select_related(
+            'organization', 'creator', 'user', 'folder_or_document', 'shared_link_cart'
+        ).filter(shared_link_cart_id=instance.id).first().editable
+
+    def get_expiration_date(self, instance):
+        return GiveAccessToDocumentFolder.objects.select_related(
+            'organization', 'creator', 'user', 'folder_or_document', 'shared_link_cart'
+        ).filter(shared_link_cart_id=instance.id).first().expiration_date
 
 
 class GiveAccessCartSerializer(serializers.ModelSerializer):
@@ -252,18 +261,3 @@ class GiveAccessCartSerializer(serializers.ModelSerializer):
             }
         else:
             return instance.external
-=======
-        fields = ('id', 'out_side_person', 'created_at', 'editable', 'expiration_date')
-
-    def get_editable(self, instance):
-        return GiveAccessToDocumentFolder.objects.select_related(
-            'organization', 'creator', 'user', 'folder_or_document', 'shared_link_cart'
-        ).filter(shared_link_cart_id=instance.id).first().editable
-
-    def get_expiration_date(self, instance):
-        return GiveAccessToDocumentFolder.objects.select_related(
-            'organization', 'creator', 'user', 'folder_or_document', 'shared_link_cart'
-        ).filter(shared_link_cart_id=instance.id).first().expiration_date
-
-
->>>>>>> 5f45d52 (External user open folder bug fixed)
