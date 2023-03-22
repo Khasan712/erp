@@ -32,5 +32,23 @@ def make_pagination(request, serializer, data):
     }
 
 
+def queryset_pagination(request, queryset):
+    if not queryset:
+        return {
+            "success": False,
+            "data": []
+        }
+    paginator = LimitOffsetPagination()
+    result_page = paginator.paginate_queryset(queryset, request)
+    paginator_response = paginator.get_paginated_response(result_page).data
+    return {
+        "success": True,
+        "count": paginator_response["count"],
+        "next": paginator_response["next"],
+        "previous": paginator_response["previous"],
+        "data": result_page
+    }
+
+
 
 

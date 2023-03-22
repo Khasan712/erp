@@ -35,6 +35,7 @@ urlpatterns = [
     path('api/v1/chat/', include('api.v1.chat.urls')),
     path('api/v1/services/', include('api.v1.services.urls')),
     path('api/v1/folders/', include('api.v1.folders.urls')),
+    path('api/v1/reports/', include('api.v1.reports.urls')),
 
     # Swagger
     path("schema/", get_schema_view(title="API's", description="API for Erp contract",), name="openapi-schema",),

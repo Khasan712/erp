@@ -2,8 +2,9 @@ from django.core.mail import EmailMessage
 from rest_framework import status, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.db.models import Q
-from .models import Notification
+from django.db.models import Q, Case, When
+from .models import Notification, ChatRoom
+from ..commons.pagination import queryset_pagination
 from ..commons.views import exception_response
 from api.v1.suppliers.models import (
     Supplier,
@@ -17,30 +18,45 @@ class ChatApi(APIView):
 
     def get_connected_users(self):
         user = self.request.user
-        connected_users = User.objects.select_related('organizations').filter(
-            Q(chat_partner1__partner1_id=user.id) | Q(chat_partner1__partner2_id=user.id)
+        all_chat_rooms = ChatRoom.objects.select_related('partner1', 'partner2').filter(
+            Q(partner1_id=user.id) | Q(partner2_id=user.id)
         )
-        return connected_users.values('id', 'email', 'first_name', 'last_name')
+        users_data = []
+        if not all_chat_rooms:
+            return None
+        for all_chat_room in all_chat_rooms:
+            if all_chat_room.partner1.id == user.id:
+                users_data.append({
+                    'id': all_chat_room.partner2.id,
+                    'first_name': all_chat_room.partner2.first_name,
+                    'last_name': all_chat_room.partner2.last_name,
+                    'email': all_chat_room.partner2.email,
+                    'room_id': all_chat_room.room_id,
+                })
+            else:
+                users_data.append({
+                    'id': all_chat_room.partner1.id,
+                    'first_name': all_chat_room.partner1.first_name,
+                    'last_name': all_chat_room.partner1.last_name,
+                    'email': all_chat_room.partner1.email,
+                    'room_id': all_chat_room.room_id,
+                })
+        return users_data
 
     def get(self, request):
         try:
-            user = self.request.user
-            request_data = self.request.data
-            method = request_data.get('method')
-            data = None
+            params = self.request.query_params
+            method = params.get('method')
+            if not method or method not in ("connected.users",):
+                raise ValueError("Method not given or not found!")
             match method:
                 case 'connected.users':
                     data = self.get_connected_users()
+                    return Response(queryset_pagination(request, data), status=status.HTTP_200_OK)
         except Exception as e:
             return Response(
                 exception_response(e), status=status.HTTP_400_BAD_REQUEST
             )
-        return Response(
-            {
-                'success': True,
-                'data': data
-            }
-        )
 
 
 def make_contract_noti(sender_id, receiver_id, contract_id, text):

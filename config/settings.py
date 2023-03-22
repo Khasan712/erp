@@ -65,6 +65,7 @@ INSTALLED_APPS += [
     'api.v1.sourcing',
     'api.v1.items',
     'api.v1.folders',
+    'api.v1.reports',
 ]
 
 MIDDLEWARE = [

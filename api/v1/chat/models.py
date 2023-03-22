@@ -1,7 +1,7 @@
 import uuid
 
 from django.db import models
-
+from django.db.models import Q
 from .enums import NotificationChoices
 from api.v1.users.models import User
 from api.v1.sourcing.models import (
@@ -47,6 +47,18 @@ class ChatRoom(DateTimeMixin):
         
     def __str__(self):
         return f'{self.partner1.email} - {self.partner2.email}'
+
+    def clean(self):
+        the_same_rooms = ChatRoom.objects.select_related('partner1', 'partner2').filter(
+            Q(partner1_id=self.partner1.id, partner2_id=self.partner2.id) |
+            Q(partner2_id=self.partner1.id, partner1_id=self.partner2.id)
+        )
+        if the_same_rooms:
+            raise ValueError("Error")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
 
 
 class Chat(DateTimeMixin):
