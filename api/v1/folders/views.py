@@ -1096,7 +1096,7 @@ class SharedLinkAPi(views.APIView):
     def get_users_list(self, token):
         access_cart = self.get_cart_queryset().filter(access_code=token).first()
         if not access_cart:
-            return ValidationError(message="Token not found")
+            raise ValueError("Token not found")
         return User.objects.select_related('organization').filter(
             cart_creator__out_side_person=access_cart.out_side_person
         ).distinct()
@@ -1104,7 +1104,7 @@ class SharedLinkAPi(views.APIView):
     def get_user_carts(self, token, invitor_id):
         access_cart = self.get_cart_queryset().filter(access_code=token).first()
         if not access_cart:
-            return ValueError("Token not found")
+            raise ValueError("Token not found")
         return self.get_cart_queryset().filter(
             out_side_person=access_cart.out_side_person, creator_id=invitor_id
         )
@@ -1112,7 +1112,7 @@ class SharedLinkAPi(views.APIView):
     def get_user_cart(self, token, cart_id):
         access_cart = self.get_cart_queryset().filter(access_code=token).first()
         if not access_cart:
-            return ValueError("Token not found")
+            raise ValueError("Token not found")
         return self.get_given_access_queryset().filter(
             shared_link_cart_id=cart_id, shared_link_cart__out_side_person=access_cart.out_side_person
         )
@@ -1120,7 +1120,7 @@ class SharedLinkAPi(views.APIView):
     def get_open_folder(self, token, item_id):
         access_cart = self.get_cart_queryset().filter(access_code=token).first()
         if not access_cart:
-            return ValueError("Token not found")
+            raise ValueError("Token not found")
         return FolderOrDocument.objects.select_related('organization', 'creator', 'parent').filter(
             parent_id=item_id
         )
@@ -1128,8 +1128,6 @@ class SharedLinkAPi(views.APIView):
     def get(self, request):
         try:
             params = self.get_params()
-            request_data = self.request.data
-            method = request_data.get('method')
             if not params.get("method") or params.get("method") not in ('users.list', 'user.carts', 'user.cart', 'open.folder'):
                 return Response({
                     "success": False,
