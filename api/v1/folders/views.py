@@ -972,10 +972,10 @@ class SharedLinkAPi(views.APIView):
     """ This api for users who have received share ink email message """
 
     def get_given_access_queryset(self):
-        return GiveAccessToDocumentFolder.objects.select_related('organization', 'creator', 'user', 'folder_or_document')
+        return GiveAccessToDocumentFolder.objects.select_related('organization', 'creator', 'user', 'folder_or_document', 'shared_link_cart')
 
     def get_cart_queryset(self):
-        return GiveAccessCart.objects.select_related('organization', 'creator', 'user')
+        return GiveAccessCart.objects.select_related('organization', 'creator')
 
     def give_access_cart_queryset(self):
         return GiveAccessCart.objects.select_related('organization', 'creator')

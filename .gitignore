@@ -144,11 +144,12 @@ web_run.sh
 #Docker files
 #Dockerfile
 docker-compose.local.yml
-#Dockerfile
-#docker-compose.yml
+Dockerfile
+docker-compose.yml
 
 # MySQL
-/erp_mysql
+mysql/
+erp_mysql/
 
 # local runserver
 local-runserver.sh
