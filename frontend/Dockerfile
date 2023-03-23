@@ -1,6 +1,6 @@
 FROM node:latest
+COPY ./erp-canada-chat-server/ /chat
 WORKDIR /chat
-COPY ./erp-canada-chat-server/* /chat
 RUN npm install
 COPY . .
 EXPOSE 1221
