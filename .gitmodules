@@ -1,0 +1,6 @@
+[submodule "erp-canada-chat-server"]
+	path = erp-canada-chat-server
+	url = https://github.com/IbrohimKhusanovich/erp-canada-chat-server.git
+[submodule "frontend/erp-canada-chat-server"]
+	path = frontend/erp-canada-chat-server
+	url = https://github.com/IbrohimKhusanovich/erp-canada-chat-server.git

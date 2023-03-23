@@ -142,10 +142,9 @@ media/
 web_run.sh
 
 #Docker files
+#docker-compose.local.yml
 #Dockerfile
-docker-compose.local.yml
-Dockerfile
-docker-compose.yml
+#docker-compose.yml
 
 # MySQL
 mysql/

@@ -25,5 +25,8 @@ web/media
 web/static/CACHE
 stats
 Dockerfile
+/migrations
 migrations/
 web/migrations/
+/node_modules
+node_modules/
