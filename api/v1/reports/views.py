@@ -93,7 +93,7 @@ class ReportAPi(APIView):
 
         col_num = 1
         max_down_row_num = 2
-        row_num = 2
+        row_num = max_down_row_num
         for c in range(len(contract_queryset)):
             for column_key, column_val in exel_headers.items():
                 if column_key == 'category_manager':
@@ -119,6 +119,7 @@ class ReportAPi(APIView):
                             s_col+=1
                         s_row+=1
                         s_col = col_num
+                        max_down_row_num+=1
                     col_num += len(column_val.keys())
                 else:
                     c_val = contract_queryset[c].__dict__[column_key]
@@ -133,7 +134,8 @@ class ReportAPi(APIView):
                     cell.protection = Protection(locked=True)
                     col_num+=1
             max_down_row_num += 1
-            row_num +=1
+            row_num = max_down_row_num
+            col_num = 1
             print(row_num)
 
         print(os.path.join(workbook.save('file.xlsx')))

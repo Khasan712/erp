@@ -67,7 +67,7 @@ class Service(models.Model):
     description = models.CharField(max_length=1000, blank=True, null=True)
     frequency = models.FloatField(default=0, blank=True, null=True)
     must_increase = models.BooleanField(default=False)
-    increasePayTerms = models.CharField(max_length=13, choices=IncreasePayTerms.choices())
+    increasePayTerms = models.CharField(max_length=13, choices=IncreasePayTerms.choices(), blank=True, null=True)
     how_many_times = models.IntegerField(default=0)
     growthPercentage = models.FloatField(default=0, blank=True, null=True)
     status = models.CharField(max_length=10, choices=ItemStatuses.choices(), default='expired')

@@ -40,7 +40,8 @@ class ChatRoom(DateTimeMixin):
     room_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     partner1 = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, related_name='chat_partner1')
     partner2 = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, related_name='chat_partner2')
-    
+    partner1_last_seen = models.DateTimeField(null=True, blank=True)
+    partner2_last_seen = models.DateTimeField(null=True, blank=True)
     class Meta:
         verbose_name = 'Chat Room'
         verbose_name_plural = 'Chat Rooms'
@@ -64,9 +65,6 @@ class ChatRoom(DateTimeMixin):
 class Chat(DateTimeMixin):
     chat_room = models.ForeignKey(ChatRoom, on_delete=models.SET_NULL, null=True, related_name='chat_room')
     user = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='chat_sender')
-
-    sender_last_seen = models.DateTimeField(null=True, blank=True)
-    receiver_last_seen = models.DateTimeField(null=True, blank=True)
     
     message = models.TextField(null=True, blank=True)
     answer_for = models.ForeignKey('self', models.DO_NOTHING, null=True, blank=True)  # TODO: use this
@@ -75,7 +73,7 @@ class Chat(DateTimeMixin):
     is_active = models.BooleanField(default=True)
     
     def __str__(self):
-        return f'{self.sender.email}'
+        return f'{self.chat_room}'
 
 
 class ChatFile(models.Model):
