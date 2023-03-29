@@ -892,7 +892,7 @@ class SourcingCommentsView(APIView):
                             'data': serializer.data()
                         })
                     questionary_comments = self.get_comments_queryset().filter(
-                        sourcingRequestEvent_id=params.get('questionary'), author_id=user.id
+                        sourcingRequestEvent_id=params.get('questionary'), author_id=user.id, supplier_id=params.get('supplier')
                     )
                     serializer = SourcingCommentsQuestionaryGetSerializer(questionary_comments, many=True)
                     return Response({
