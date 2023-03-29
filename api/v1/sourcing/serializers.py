@@ -202,6 +202,33 @@ class SourcingCommentsSerializers(serializers.ModelSerializer):
         fields = ('__all__',)
 
 
+class SourcingCommentsQuestionarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SourcingComments
+        fields = ('id', 'supplier', 'text')
+
+
+class SourcingCommentsQuestionaryGetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SourcingComments
+        fields = ('id', 'supplier', 'text', 'created_date', 'author')
+
+    def to_representation(self, instance):
+        res = super().to_representation(instance)
+        if res.get('supplier'):
+            res['supplier'] = {
+                'id': instance.supplier.id,
+                'name': instance.supplier.name
+            }
+        if res.get('author'):
+            res['author'] = {
+                'id': instance.author.id,
+                'first_name': instance.author.first_name,
+                'last_name': instance.author.last_name
+            }
+        return res
+
+
 class SourcingGetCommentsSerializers(serializers.ModelSerializer):
     class Meta:
         model = SourcingComments

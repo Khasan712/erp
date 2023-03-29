@@ -262,10 +262,17 @@ class SupplierAnswer(models.Model):
 
 
 class SourcingComments(models.Model):
-    sourcingRequest = models.ForeignKey(SourcingRequest, on_delete=models.SET_NULL, null=True)
-    sourcingRequestEvent = models.ForeignKey(SourcingRequestEvent, on_delete=models.SET_NULL, null=True)
-    author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    sourcingRequest = models.ForeignKey(SourcingRequest, on_delete=models.SET_NULL, null=True, blank=True)
+    sourcingRequestEvent = models.ForeignKey(SourcingRequestEvent, on_delete=models.SET_NULL, null=True, blank=True)
+    author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    supplier = models.ForeignKey(Supplier, on_delete=models.SET_NULL, null=True, blank=True)
     text = models.TextField()
     parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True)
+    created_date = models.DateTimeField(auto_now_add=True)
+
+
+class SourcingCommentFile(models.Model):
+    comment = models.ForeignKey(SourcingComments, on_delete=models.SET_NULL, blank=True, null=True)
+    uploaded_file = models.FileField(upload_to='sourcing/comment/files/')
     created_date = models.DateTimeField(auto_now_add=True)
     
