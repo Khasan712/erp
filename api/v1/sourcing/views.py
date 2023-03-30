@@ -837,7 +837,7 @@ class SourcingCommentsView(APIView):
                     serializer.save(
                         sourcingRequestEvent=questionary,
                         supplier_id=data.get("supplier"),
-                        author=user.id
+                        author=user
                     )
                     return Response({
                         'success': True
