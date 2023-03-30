@@ -889,7 +889,7 @@ class SourcingCommentsView(APIView):
                         serializer = SourcingCommentsQuestionaryGetSerializer(questionary_comments, many=True)
                         return Response({
                             "success": True,
-                            'data': serializer.data()
+                            'data': serializer.data
                         })
                     questionary_comments = self.get_comments_queryset().filter(
                         sourcingRequestEvent_id=params.get('questionary'), author_id=user.id, supplier_id=params.get('supplier')
@@ -897,7 +897,7 @@ class SourcingCommentsView(APIView):
                     serializer = SourcingCommentsQuestionaryGetSerializer(questionary_comments, many=True)
                     return Response({
                         "success": True,
-                        'data': serializer.data()
+                        'data': serializer.data
                     })
         except Exception as e:
             return Response(
