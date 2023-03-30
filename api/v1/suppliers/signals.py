@@ -38,6 +38,7 @@ def supplier_signals(sender, instance, created, **kwargs):
     if created:
         instance.account = generate_account_number()
         instance = validate_instance(instance)
-    if not created:
-        instance = validate_instance(instance)
-    instance.save()
+        instance.save()
+    # if not created:
+    #     instance = validate_instance(instance)
+    #     instance.save()

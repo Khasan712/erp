@@ -10,7 +10,7 @@ def create_notification(sender, instance, created, **kwargs):
     if created:
         if instance.sourcingRequestEvent:
             Notification.objects.create(
-                sender=instance.author,
+                sender=instance.sourcingRequestEvent.creator,
                 text=f"Commented on: {instance.sourcingRequestEvent.title}",
                 receiver=instance.sourcingRequestEvent.creator,
                 sourcing_e=instance.sourcingRequestEvent

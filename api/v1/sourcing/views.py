@@ -815,16 +815,16 @@ class SourcingCommentsView(APIView):
             match method:
                 case 'questionary':
                     if user.role == 'supplier':
-                        questionary = self.get_event_queryset().filter(id=data.get('questionary')).first()
+                        questionary = self.get_event_queryset().filter(id=data.get('questionary'), general_status='questionary').first()
                         event_supplier = self.get_event_suppliers_queryset().filter(
                             sourcingRequestEvent_id=questionary.parent.id, supplier__supplier_id=user.id
                         ).first()
-                        serializer = SourcingCommentsQuestionarySerializer(data)
+                        serializer = SourcingCommentsQuestionarySerializer(data=data)
                         if not serializer.is_valid():
                             raise ValueError(make_errors(serializer.errors))
                         serializer.save(
-                            sourcingRequestEvent=questionary.id,
-                            supplier=event_supplier.supplier.id
+                            sourcingRequestEvent=questionary,
+                            supplier=event_supplier.supplier
                         )
                         return Response({
                             'success': True
