@@ -829,12 +829,13 @@ class SourcingCommentsView(APIView):
                         return Response({
                             'success': True
                         }, status=status.HTTP_201_CREATED)
+
                     questionary = self.get_event_queryset().filter(id=data.get('questionary')).first()
-                    serializer = SourcingCommentsQuestionarySerializer(data)
+                    serializer = SourcingCommentsQuestionarySerializer(data=data)
                     if not serializer.is_valid():
                         raise ValueError(make_errors(serializer.errors))
                     serializer.save(
-                        sourcingRequestEvent=questionary.id,
+                        sourcingRequestEvent=questionary,
                         supplier_id=data.get("supplier"),
                         author=user.id
                     )
