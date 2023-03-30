@@ -800,6 +800,9 @@ class SourcingCommentsView(APIView):
     def get_event_queryset(self):
         return SourcingRequestEvent.objects.select_related('sourcing_request', 'creator', 'parent')
 
+    def get_request_queryset(self):
+        return SourcingRequest.objects.select_related('organization', 'departement', 'categoryRequest', 'requestor', 'assigned_to', 'currency')
+
     def get_event_suppliers_queryset(self):
         return SourcingRequestEventSuppliers.objects.select_related('supplier', 'sourcingRequestEvent')
 
@@ -842,7 +845,20 @@ class SourcingCommentsView(APIView):
                     return Response({
                         'success': True
                     }, status=status.HTTP_201_CREATED)
-
+                case 'sourcing.request':
+                    sourcing_request = self.get_request_queryset().filter(
+                        id=data.get('request'), organization_id=user.organization.uz
+                    ).first()
+                    serializer = SourcingCommentsQuestionarySerializer(data=data)
+                    if not serializer.is_valid():
+                        raise ValueError(make_errors(serializer.errors))
+                    serializer.save(
+                        sourcingRequestEvent=sourcing_request,
+                        author=user
+                    )
+                    return Response({
+                        'success': True
+                    }, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response(
                 {
@@ -857,31 +873,30 @@ class SourcingCommentsView(APIView):
         try:
             params = request.query_params
             method = params.get("method")
-            organization = self.request.user.organization.id
             user = self.request.user
             match method:
                 case 's_request':
-                    s_request_c = SourcingComments.objects.filter(sourcingRequest__organization_id=organization)
+                    s_request_c = SourcingComments.objects.filter(
+                        id=params.get('request'), sourcingRequest__organization_id=user.organization.id
+                    )
                     serializers = SourcingGetCommentsSerializers(s_request_c, many=True)
                     return Response(
                         {
                             "success": True,
-                            "message": 'Successfully got sourcing request comments.',
-                            "error": [],
                             "data": serializers.data,
                         }, status=status.HTTP_200_OK
                     )
-                case 's_event':
-                    s_event_c = SourcingComments.objects.filter(sourcingRequestEvent__sourcing_request__organization_id=organization)
-                    serializers = SourcingGetCommentsSerializers(s_event_c, many=True)
-                    return Response(
-                        {
-                            "success": True,
-                            "message": 'Successfully got sourcing event comments.',
-                            "error": [],
-                            "data": serializers.data,
-                        }, status=status.HTTP_200_OK
-                    )
+                # case 's_event':
+                #     s_event_c = SourcingComments.objects.filter(sourcingRequestEvent__sourcing_request__organization_id=organization)
+                #     serializers = SourcingGetCommentsSerializers(s_event_c, many=True)
+                #     return Response(
+                #         {
+                #             "success": True,
+                #             "message": 'Successfully got sourcing event comments.',
+                #             "error": [],
+                #             "data": serializers.data,
+                #         }, status=status.HTTP_200_OK
+                #     )
                 case 'questionary':
                     if user.role == 'supplier':
                         questionary_comments = self.get_comments_queryset().filter(

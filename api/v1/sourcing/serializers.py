@@ -232,7 +232,18 @@ class SourcingCommentsQuestionaryGetSerializer(serializers.ModelSerializer):
 class SourcingGetCommentsSerializers(serializers.ModelSerializer):
     class Meta:
         model = SourcingComments
-        exclude = ('sourcingRequestEvent', 'sourcingRequest')
+        exclude = ('id', 'text', 'author')
+
+    def to_representation(self, instance):
+        res = super().to_representation(instance)
+        if res.get('author'):
+            res['author'] = {
+                'id': instance.author.id,
+                'first_name': instance.author.first_name,
+                'last_name': instance.author.last_name,
+                'email': instance.author.email,
+            }
+        return res
 
 
 class SupplierAnswerSerializers(serializers.ModelSerializer):
