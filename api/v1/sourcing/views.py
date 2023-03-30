@@ -875,7 +875,7 @@ class SourcingCommentsView(APIView):
             method = params.get("method")
             user = self.request.user
             match method:
-                case 's_request':
+                case 'sourcing.request':
                     s_request_c = SourcingComments.objects.filter(
                         id=params.get('request'), sourcingRequest__organization_id=user.organization.id
                     )
