@@ -53,5 +53,34 @@ REPORT_FIELDS = {
         'growthPercentage': 'Growth percentage',
         'status': 'Status',
         'created_at': 'Created date',
+    },
+    'departement': {
+        'name': 'Departement name',
+        'creator': 'Departement created by',
+        'created_at': 'Departement creation date'
+    },
+    'category': {
+        'name': 'Category nmae'
+    },
+    'currency': {
+        'name': 'Currency'
+    },
+    'supplier': {
+        'create_by': 'Supplier Created by',
+        'supplier': 'Supplier',
+        'parent_supplier': 'Parent supplier',
+        'name': 'Supplier name',
+        'account': 'Supplier account',
+        'address': 'Supplier address',
+        'city': 'Supplier city',
+        'postal_code': 'Supplier postal_code',
+        'country': 'Supplier country',
+        'supplier_status': 'Supplier status',
+        'billing_address': 'Supplier billing address',
+        'bank_name': 'Supplier bank name',
+        'transit_number': 'Supplier transit number',
+        'institution_number': 'Supplier institution number',
+        'bank_account': 'Supplier bank account',
+        'parent': 'Supplier parent',
     }
 }

@@ -10,7 +10,7 @@ from .models import (
     CategoryRequest,
     DocumentSourcing,
     SourcingRequestService, SourcingRequestCommodity, SourcingRequestConsultant,
-    SourcingRequestAssigned
+    SourcingRequestAssigned, SourcingComments
 )
 
 
@@ -57,3 +57,4 @@ admin.site.register(SourcingRequestService)
 admin.site.register(SourcingRequestCommodity)
 admin.site.register(SourcingRequestConsultant)
 admin.site.register(SourcingRequestAssigned)
+admin.site.register(SourcingComments)
