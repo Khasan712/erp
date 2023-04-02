@@ -877,7 +877,7 @@ class SourcingCommentsView(APIView):
             match method:
                 case 'sourcing.request':
                     s_request_c = SourcingComments.objects.filter(
-                        id=params.get('request'), sourcingRequest__organization_id=user.organization.id
+                        sourcingRequest_id=params.get('request'), sourcingRequest__organization_id=user.organization.id
                     )
                     serializers = SourcingGetCommentsSerializers(s_request_c, many=True)
                     return Response(
