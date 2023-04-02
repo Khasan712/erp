@@ -175,7 +175,7 @@ class ContractService(models.Model):
 
 class ContractCommodity(models.Model):
     contract = models.ForeignKey(Contract, on_delete=models.CASCADE)
-    commodity = models.ForeignKey(Commodity, on_delete=models.CASCADE)
+    commodity = models.ForeignKey(Commodity, on_delete=models.CASCADE, related_name='contract_commodity')
     creator = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -185,7 +185,7 @@ class ContractCommodity(models.Model):
 
 class ContractConsultant(models.Model):
     contract = models.ForeignKey(Contract, on_delete=models.CASCADE)
-    consultant = models.ForeignKey(Consultant, on_delete=models.CASCADE)
+    consultant = models.ForeignKey(Consultant, on_delete=models.CASCADE, related_name='contract_consultant')
     creator = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 

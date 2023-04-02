@@ -25,11 +25,9 @@ REPORT_FIELDS = {
         'count_changes': "Count changes",
         'notification': "Notification",
         'supplier': "Supplier",
-        'serviceCommodityConsultant': {
-            'services': 'Services',
-            'commodities': 'Commodities',
-            'consultants': 'Consultants'
-        }
+        'service': 'Services',
+        'commodity': 'Commodities',
+        'consultant': 'Consultants'
     },
     'user': {
         'email': 'Email',
@@ -41,7 +39,19 @@ REPORT_FIELDS = {
         'country': 'country',
         'role': 'role',
     },
-    'commodity_service': {
+    'service': {
+        'creator': 'Created by',
+        'name': 'Name',
+        'description': 'Description',
+        'frequency': 'Frequency',
+        'must_increase': 'Must increase',
+        'increasePayTerms': 'Increase pay terms',
+        'how_many_times': 'How many times',
+        'growthPercentage': 'Growth percentage',
+        'status': 'Status',
+        'created_at': 'Created date',
+    },
+    'commodity': {
         'creator': 'Created by',
         'name': 'Name',
         'description': 'Description',
@@ -100,14 +110,6 @@ REPORT_FIELDS = {
         'parent': 'Supplier parent',
     }
 }
-
-
-
-
-
-
-
-
 
 
 
