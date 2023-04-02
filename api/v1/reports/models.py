@@ -1,5 +1,6 @@
 from django.db import models
 
+from api.v1.reports.enums import ReportModel
 from api.v1.users.models import User
 
 
@@ -11,6 +12,7 @@ def upload_location_report(instance, file):
 
 
 class Report(models.Model):
+    report_model = models.CharField(max_length=8, choices=ReportModel.choices(), blank=True, null=True)
     done_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     report_file = models.FileField(upload_to=upload_location_report)
     created_at = models.DateTimeField(auto_now_add=True)

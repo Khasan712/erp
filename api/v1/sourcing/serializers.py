@@ -232,7 +232,7 @@ class SourcingCommentsQuestionaryGetSerializer(serializers.ModelSerializer):
 class SourcingGetCommentsSerializers(serializers.ModelSerializer):
     class Meta:
         model = SourcingComments
-        exclude = ('id', 'text', 'author')
+        fields = ('id', 'text', 'author')
 
     def to_representation(self, instance):
         res = super().to_representation(instance)

@@ -17,7 +17,6 @@ REPORT_FIELDS = {
         'contract_amount': "Contract amount",
         'category': "Category",
         'currency': "Currency",
-        'organization': "organization",
         'create_by': "Created by",
         'terms': "Terms",
         'contract_notice': "Contract notice",
@@ -42,7 +41,7 @@ REPORT_FIELDS = {
         'country': 'country',
         'role': 'role',
     },
-    'service': {
+    'commodity_service': {
         'creator': 'Created by',
         'name': 'Name',
         'description': 'Description',
@@ -54,6 +53,23 @@ REPORT_FIELDS = {
         'status': 'Status',
         'created_at': 'Created date',
     },
+    'consultant': {
+        'creator': 'Created by',
+        'f_n': 'First name',
+        'l_n': 'Last name',
+        'email': 'Email',
+        'c_start_d': 'Consultant start date',
+        'c_end_d': 'Consultant end date',
+        'paymentFor': 'Consultant payment',
+        'must_increase': '',
+        'increasePayTerms': 'Status',
+        'how_many_times': 'Created date',
+        'growthPercentage': 'How many times',
+        'frequency': 'Growth percentage',
+        'status': 'Status',
+        'created_at': 'Created date',
+    },
+
     'departement': {
         'name': 'Departement name',
         'creator': 'Departement created by',
@@ -84,3 +100,23 @@ REPORT_FIELDS = {
         'parent': 'Supplier parent',
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

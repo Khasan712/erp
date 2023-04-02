@@ -22,32 +22,43 @@ def contract_to_exel(request):
     request_fields = request_body.get("fields")
     if not request_fields:
         raise ValueError("Exel header not given!")
-    exel_headers = dict()
-    contract_fields = list(dict.fromkeys(request_fields.get("contract")))
-    for contract_field in contract_fields:
+    exel_headers = {}
+    for contract_field in dict.fromkeys(request_fields.get('contract', [])):
 
-        if contract_field not in REPORT_FIELDS['contract'].keys():
+        if contract_field not in REPORT_FIELDS['contract']:
             raise ValueError(f"Given contract variable not found! `{contract_field}`")
 
-        if contract_field == 'category_manager':
-            category_manager_fields = request_fields.get('category_manager')
-            if not category_manager_fields:
-                raise ValueError("Category manager header not given!")
-            category_manager_fields = list(dict.fromkeys(category_manager_fields))
-            collect_category_manager_fields = dict()
-            for category_manager_field in category_manager_fields:
-                if category_manager_field not in REPORT_FIELDS['user'].keys():
-                    raise ValueError("Category manager variable not found!")
-                collect_category_manager_fields[category_manager_field] = f"Category manager {REPORT_FIELDS['user'][category_manager_field]}"
-            exel_headers['category_manager'] = collect_category_manager_fields
+        if contract_field in ['category_manager', 'contract_owner', 'lawyer', 'project_owner']:
+            contract_user_fields = request_fields.get(contract_field)
+            if not contract_user_fields:
+                raise ValueError(f"{contract_field} header not given!")
+            contract_user_manager_fields = {}
+            for contract_user_field in dict.fromkeys(contract_user_fields):
+                if contract_user_field not in REPORT_FIELDS['user']:
+                    raise ValueError(f"{contract_field} variable not found!")
+                contract_user_manager_fields[contract_user_field] = f"{contract_field.replace('_',' ').capitalize()} {REPORT_FIELDS['user'][contract_user_field]}"
+            exel_headers[contract_field] = contract_user_manager_fields
+
+        elif contract_field in ['departement', 'category', 'currency', 'supplier']:
+            contract_d_c_c_s_fields = request_fields.get(contract_field)
+            if not contract_d_c_c_s_fields:
+                raise ValueError(f"{contract_field} header not given!")
+            contract_d_c_c_s_manager_fields = {}
+            for contract_d_c_c_s_field in dict.fromkeys(contract_d_c_c_s_fields):
+                if contract_d_c_c_s_field not in REPORT_FIELDS[contract_field]:
+                    raise ValueError(f"{contract_field} variable not found!")
+                contract_d_c_c_s_manager_fields[
+                    contract_d_c_c_s_field] = f"{contract_field.replace('_', ' ').capitalize()} {REPORT_FIELDS[contract_field][contract_d_c_c_s_field]}"
+            exel_headers[contract_field] = contract_d_c_c_s_manager_fields
 
         elif contract_field == 'serviceCommodityConsultant':
             service_fields = request_fields.get("service")
+            commodity_fields = request_fields.get("service")
+            consultant_fields = request_fields.get("service")
             if not service_fields:
                 raise ValueError("Service header not given!")
-            service_fields = list(dict.fromkeys(service_fields))
-            collect_service_fields = dict()
-            for service_field in service_fields:
+            collect_service_fields = {}
+            for service_field in dict.fromkeys(service_fields):
                 if service_field not in REPORT_FIELDS['service'].keys():
                     raise ValueError("Service variable not found!")
                 collect_service_fields[service_field] = f"Service {REPORT_FIELDS['service'][service_field]}"
@@ -65,23 +76,14 @@ def contract_to_exel(request):
     row_num = 1
     col_num = 1
     for column_key, column_val in exel_headers.items():
-        if column_key == 'category_manager':
-            for c_m_title in column_val.values():
-                cell = worksheet.cell(row=row_num, column=col_num)
-                cell.value = c_m_title
-                cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-                cell.font = Font(bold=True)
-                col_num+=1
-        elif column_key == 'service':
-            for s_title in column_val.values():
-                cell = worksheet.cell(row=row_num, column=col_num)
-                cell.value = s_title
+        if column_key in ['category_manager', 'contract_owner', 'service']:
+            for title in column_val.values():
+                cell = worksheet.cell(row=row_num, column=col_num, value=title)
                 cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
                 cell.font = Font(bold=True)
                 col_num+=1
         else:
-            cell = worksheet.cell(row=row_num, column=col_num)
-            cell.value = column_val
+            cell = worksheet.cell(row=row_num, column=col_num, value=column_val)
             cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
             cell.font = Font(bold=True)
             col_num+=1
@@ -89,24 +91,24 @@ def contract_to_exel(request):
     col_num = 1
     max_down_row_num = 2
     row_num = max_down_row_num
-    for c in range(len(contract_queryset)):
+    for c, q_v in enumerate(contract_queryset):
+        print(c)
         for column_key, column_val in exel_headers.items():
-            if column_key == 'category_manager':
+            if column_key in ['category_manager', 'contract_owner']:
                 val = contract_queryset[c].category_manager.__dict__
                 for c_m_key in column_val.keys():
                     cell = worksheet.cell(row=row_num, column=col_num)
                     cell.value = val[c_m_key]
                     cell.protection = Protection(locked=True)
                     col_num+=1
-
             elif column_key == 'service':
                 all_services = Service.objects.select_related("organization", 'creator').filter(
                     contract_services__contract_id=contract_queryset[c].id
                 )
                 s_row = row_num
                 s_col = col_num
-                for all_s in range(len(all_services)):
-                    s_obj_dict = all_services[all_s].__dict__
+                for q_i, q_v in enumerate(all_services):
+                    s_obj_dict = all_services[q_i].__dict__
                     for s_key in column_val.keys():
                         cell = worksheet.cell(row=s_row, column=s_col)
                         cell.value = s_obj_dict[s_key]
@@ -138,6 +140,7 @@ def contract_to_exel(request):
         os.makedirs(new_path)
     workbook.save(f'{new_path}/{current_time}.xlsx')
     file_save = Report.objects.create(
+        report_model='contract',
         done_by_id=user.id,
         report_file=f'{new_path}/{current_time}.xlsx',
     )
