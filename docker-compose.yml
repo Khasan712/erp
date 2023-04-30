@@ -17,10 +17,6 @@ services:
     depends_on:
       - mysql
 
-  chat:
-    build: ./frontend
-    container_name: chat
-
   nginx:
     build: ./nginx
     container_name: nginx
