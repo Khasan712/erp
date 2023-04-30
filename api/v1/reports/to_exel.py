@@ -10,12 +10,18 @@ import os
 
 
 def get_contract_queryset(request):
-    return Contract.objects.select_related(
+    contracts = Contract.objects.select_related(
         'parent_agreement', 'departement', 'category', 'currency', 'organization', 'create_by', 'supplier'
     ).filter(
         organization_id=request.user.organization.id
     )
-
+    request_data = request.data.get('filter')
+    if request_data:
+        for data_filter in request_data:
+            if isinstance(data_filter, dict):
+                pass
+    
+    return contracts
 
 def contract_to_exel(request):
     user = request.user
@@ -58,9 +64,6 @@ def contract_to_exel(request):
     worksheet = workbook.active
     worksheet.sheet_properties.tabColor = '1072BA'
     worksheet.freeze_panes = 'I2'
-
-    contract_queryset = get_contract_queryset(request)
-
     row_num = 1
     col_num = 1
     for column_key, column_val in exel_headers.items():
@@ -78,8 +81,8 @@ def contract_to_exel(request):
     col_num = 1
     max_down_row_num = 2
     row_num = max_down_row_num
-
-    for c, c_v in enumerate(contract_queryset):
+    contract_queryset = get_contract_queryset(request)
+    for _, c_v in enumerate(contract_queryset):
         for column_key, column_val in exel_headers.items():
             if column_key in [
                 'category_manager', 'contract_owner', 'lawyer', 'project_owner', 'category', 'currency'

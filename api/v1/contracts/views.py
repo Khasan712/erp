@@ -16,6 +16,7 @@ from api.v1.commons.views import exception_response, get_serializer_errors, get_
 from api.v1.contracts.serializers import (
     ContractFileUploadSerializer,
     ContractSerializer,
+    GetContractByIdSerializer,
     MassUploadSerializer,
     CategorySerializer,
     CurrencySerializer,
@@ -921,4 +922,44 @@ class ContractImportDataFromExelApi(APIView):
 
 
 
+class GetContractFullData(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    
+    def get(self, request, *args, **kwargs):
+        try:
+            params = request.query_params
+            method = params.get('method')
+            match method:
+                case 'by.id':
+                    contract_id = params.get('contract_id')
+                    if not contract_id or not contract_id.isdigit():
+                        raise ValueError('COntract id not given.')
+                    contract = Contract.objects.select_related(
+                        "category_manager", "contract_owner", "lawyer", "project_owner", "parent_agreement", 
+                        "departement", "category", "currency", "organization", "create_by", "supplier"
+                    ).filter(create_by__organization_id=self.request.user.organization.id, id=contract_id).first()
+                    if not contract:
+                        raise ValueError("Contract not found!")
+                    contract_serializer = GetContractByIdSerializer(contract)
+                    return Response({
+                        "status": True,
+                        "data": contract_serializer.data
+                    })
+                case 'list':
+                    contract = Contract.objects.select_related(
+                        "category_manager", "contract_owner", "lawyer", "project_owner", "parent_agreement", 
+                        "departement", "category", "currency", "organization", "create_by", "supplier"
+                    ).filter(create_by__organization_id=self.request.user.organization.id)
+                    contract_serializer = GetContractByIdSerializer
+                    return Response(make_pagination(request, contract_serializer, contract))
+        except Exception as e:
+            return Response({
+                'status': False,
+                'error': str(e)
+            })
+        else:
+            return Response({
+                "status": True,
+                "data": None
+            })
 

@@ -18,7 +18,8 @@ from .views import (
     ContractCategoryStatisticsView,
     ProcessContractTaskView,
     ContractDetailView,
-    ContractMasterAgreementListView, ContractToExelApi, ContractImportDataFromExelApi
+    ContractMasterAgreementListView, ContractToExelApi, ContractImportDataFromExelApi,
+    GetContractFullData
 )
 
 urlpatterns = [
@@ -58,4 +59,5 @@ urlpatterns = [
 
     path('to-exel/', ContractToExelApi.as_view()),
     path('from-exel/', ContractImportDataFromExelApi.as_view()),
+    path('by-id/', GetContractFullData.as_view()),
 ]

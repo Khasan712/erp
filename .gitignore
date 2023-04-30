@@ -152,3 +152,11 @@ erp_mysql/
 
 # local runserver
 local-runserver.sh
+
+# Frontend
+frontend/
+
+
+# Pipfiles
+Pipfile
+Pipfile.lock
