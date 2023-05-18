@@ -27,7 +27,7 @@ class ReportAPi(APIView):
             if not method or method not in ('contract.to.excel',):
                 raise ValueError("Method not given or not found!")
             match method:
-                case 'contract.to.exel':
+                case 'contract.to.excel':
                     """ Write contract data to exel """
                     return Response({
                         "success": True,
