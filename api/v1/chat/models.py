@@ -67,7 +67,7 @@ class Chat(DateTimeMixin):
     user = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='chat_sender')
     
     message = models.TextField(null=True, blank=True)
-    answer_for = models.ForeignKey('self', models.DO_NOTHING, null=True, blank=True)  # TODO: use this
+    answer_for = models.ForeignKey('self', models.SET_NULL, null=True, blank=True)  # TODO: use this
 
     is_read = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)

@@ -15,7 +15,7 @@ def get_contract_queryset(request):
     ).filter(
         organization_id=request.user.organization.id
     )
-    request_data = request.data.get('filter')
+    request_data = request.data.get('filtered')
     if request_data:
         for data_filter in request_data:
             if isinstance(data_filter, dict):

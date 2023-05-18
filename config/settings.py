@@ -26,7 +26,7 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 SECRET_KEY = os.environ['SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = (os.getenv('DEBUG') == 'True')
+DEBUG = bool(os.getenv('DEBUG') == 'True')
 ALLOWED_HOSTS = ['*', ]
 # ALLOWED_HOSTS = ['*', ] if DEBUG else os.environ['ALLOWED_HOSTS'].split(' ')
 
@@ -80,8 +80,7 @@ MIDDLEWARE = [
 
 MIDDLEWARE += [
     'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'corsheaders.middleware.CorsPostCsrfMiddleware',
+    # 'corsheaders.middleware.CorsPostCsrfMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -103,7 +102,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'config.wsgi.application'
-ASGI_APPLICATION = 'config.sgi.application'
+ASGI_APPLICATION = 'config.asgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
@@ -301,14 +300,21 @@ CELERY_RESULT_SERIALIZER = 'json'
 #     'api.v1.chat.tasks',
 # )
 
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [(REDIS_HOST, int(REDIS_PORT))],
+if not DEBUG:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [(REDIS_HOST, int(REDIS_PORT))],
+            },
         },
-    },
-}
+    }
+else:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        },
+    }
 
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
@@ -323,13 +329,5 @@ SWAGGER_SETTINGS = {
     "REFETCH_SCHEMA_ON_LOGOUT": True,
     "FETCH_SCHEMA_WITH_QUERY": True,
     "DOC_EXPANSION": "none",
-
-    # 'SECURITY_DEFINITIONS': {
-    #     'api_key': {
-    #         'type': 'apiKey',
-    #         'in': 'header',
-    #         'name': 'Authorization'
-    #     }
-    # },
 }
 
