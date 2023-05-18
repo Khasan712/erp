@@ -24,7 +24,7 @@ class ReportAPi(APIView):
         try:
             request_data = request.data
             method = request_data.get('method')
-            if not method or method not in ('contract.to.exel',):
+            if not method or method not in ('contract.to.excel',):
                 raise ValueError("Method not given or not found!")
             match method:
                 case 'contract.to.exel':
