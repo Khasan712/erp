@@ -270,9 +270,17 @@ class SourcingComments(models.Model):
     parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True)
     created_date = models.DateTimeField(auto_now_add=True)
 
+    # @property
+    # def get_documents(self):
+    #     return SourcingCommentFile.objects.filter(comment_id=)
+
 
 class SourcingCommentFile(models.Model):
     comment = models.ForeignKey(SourcingComments, on_delete=models.SET_NULL, blank=True, null=True)
+    creator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     uploaded_file = models.FileField(upload_to='sourcing/comment/files/')
     created_date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.comment.text}"
     

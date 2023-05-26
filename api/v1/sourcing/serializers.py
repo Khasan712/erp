@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import (
     CategoryRequest,
+    SourcingCommentFile,
     SourcingRequest,
     DocumentSourcing,
     SourcingComments,
@@ -209,9 +210,15 @@ class SourcingCommentsQuestionarySerializer(serializers.ModelSerializer):
 
 
 class SourcingCommentsQuestionaryGetSerializer(serializers.ModelSerializer):
+    documents = serializers.SerializerMethodField()
     class Meta:
         model = SourcingComments
-        fields = ('id', 'supplier', 'text', 'created_date', 'author')
+        fields = ('id', 'supplier', 'text', 'created_date', 'author', 'documents')
+
+    def get_documents(self, instance):
+        files_objs = SourcingCommentFile.objects.filter(comment_id=instance.id)
+        serializer = SourcingCommentFileSerializer(files_objs, many=True)
+        return serializer.data
 
     def to_representation(self, instance):
         res = super().to_representation(instance)
@@ -228,6 +235,21 @@ class SourcingCommentsQuestionaryGetSerializer(serializers.ModelSerializer):
             }
         return res
 
+
+class SourcingCommentFileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SourcingCommentFile
+        fields =('id', 'uploaded_file', 'creator')
+
+    def to_representation(self, instance):
+        res = super().to_representation(instance)
+        if res.get('creator'):
+            res['creator'] = {
+                'id': instance.creator.id,
+                'role': instance.creator.role,
+                'first_name': instance.creator.first_name,
+        }
+        return res
 
 class SourcingGetCommentsSerializers(serializers.ModelSerializer):
     class Meta:

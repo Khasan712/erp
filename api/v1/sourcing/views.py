@@ -5,6 +5,7 @@ from django.conf import settings
 from django.http import HttpResponse
 from django.core.exceptions import ValidationError
 from django.contrib.sites.shortcuts import get_current_site
+from django.core.files import File
 
 from rest_framework import generics, status, permissions
 from rest_framework.views import APIView
@@ -32,6 +33,7 @@ from api.v1.commons.views import (
 )
 from api.v1.sourcing.models import (
     CategoryRequest,
+    SourcingCommentFile,
     SourcingComments,
     SourcingRequest,
     SourcingRequestEvent,
@@ -809,12 +811,27 @@ class SourcingCommentsView(APIView):
     def get_comments_queryset(self):
         return SourcingComments.objects.select_related('sourcingRequest', 'sourcingRequestEvent', 'author', 'supplier')
 
+    def set_comment_files(self, files, comment_id, user_id):
+        comment_files = []
+        for file in files:
+            file_value = file['file']['value']
+            comment_file = SourcingCommentFile(
+                comment_id=comment_id, creator_id=user_id
+            )
+            with open(file_value, 'rb') as file_rb:
+                django_file = File(file_rb)
+                comment_file.uploaded_file.save(file['file']['options']['filename'], django_file, save=False)
+
+            comment_files.append(comment_file)
+        SourcingCommentFile.objects.bulk_create(comment_files)
+
     def post(self, request):
         try:
             user = self.request.user
             data = request.data
             params = self.request.query_params
             method = params.get("method")
+            files = data.get("files", None)
             match method:
                 case 'questionary':
                     if user.role == 'supplier':
@@ -822,13 +839,17 @@ class SourcingCommentsView(APIView):
                         event_supplier = self.get_event_suppliers_queryset().filter(
                             sourcingRequestEvent_id=questionary.parent.id, supplier__supplier_id=user.id
                         ).first()
-                        serializer = SourcingCommentsQuestionarySerializer(data=data)
-                        if not serializer.is_valid():
-                            raise ValueError(make_errors(serializer.errors))
-                        serializer.save(
-                            sourcingRequestEvent=questionary,
-                            supplier=event_supplier.supplier
-                        )
+                        with transaction.atomic():
+                            serializer = SourcingCommentsQuestionarySerializer(data=data)
+                            if not serializer.is_valid():
+                                raise ValueError(make_errors(serializer.errors))
+                            serializer.save(
+                                sourcingRequestEvent=questionary,
+                                supplier=event_supplier.supplier
+                            )
+                            if files:
+                                self.set_comment_files(files, serializer.data.get('id'), user.id)
+
                         return Response({
                             'success': True
                         }, status=status.HTTP_201_CREATED)
@@ -842,6 +863,8 @@ class SourcingCommentsView(APIView):
                         supplier_id=data.get("supplier"),
                         author=user
                     )
+                    if files:
+                        self.set_comment_files(files, serializer.data.get('id'), user.id)
                     return Response({
                         'success': True
                     }, status=status.HTTP_201_CREATED)
@@ -868,7 +891,6 @@ class SourcingCommentsView(APIView):
                     "data": [],
                 }, status=status.HTTP_400_BAD_REQUEST
             )
-
     def get(self, request):
         try:
             params = request.query_params
@@ -890,19 +912,19 @@ class SourcingCommentsView(APIView):
                     if user.role == 'supplier':
                         questionary_comments = self.get_comments_queryset().filter(
                             sourcingRequestEvent_id=params.get('questionary'), supplier__supplier_id=user.id
-                        )
-                        serializer = SourcingCommentsQuestionaryGetSerializer(questionary_comments, many=True)
+                        ).order_by("-id")
+                        serializer = SourcingCommentsQuestionaryGetSerializer
                         return Response({
                             "success": True,
-                            'data': serializer.data
+                            'data': make_pagination(request, serializer, questionary_comments)
                         })
                     questionary_comments = self.get_comments_queryset().filter(
                         sourcingRequestEvent_id=params.get('questionary'), supplier_id=params.get('supplier')
-                    )
-                    serializer = SourcingCommentsQuestionaryGetSerializer(questionary_comments, many=True)
+                    ).order_by("-id")
+                    serializer = SourcingCommentsQuestionaryGetSerializer
                     return Response({
                         "success": True,
-                        'data': serializer.data
+                        'data': make_pagination(request, serializer, questionary_comments)
                     })
         except Exception as e:
             return Response(
