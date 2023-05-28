@@ -17,4 +17,3 @@ urlpatterns = [
     path('download/', views.MassDownload.as_view()),
     path('manager/', views.SourcingRequestCategoryManager.as_view()),
 ]
-

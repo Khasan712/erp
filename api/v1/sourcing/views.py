@@ -845,11 +845,11 @@ class SourcingCommentsView(APIView):
                                 raise ValueError(make_errors(serializer.errors))
                             serializer.save(
                                 sourcingRequestEvent=questionary,
-                                supplier=event_supplier.supplier
+                                supplier=event_supplier.supplier,
+                                author=user
                             )
                             if files:
                                 self.set_comment_files(files, serializer.data.get('id'), user.id)
-
                         return Response({
                             'success': True
                         }, status=status.HTTP_201_CREATED)
@@ -918,6 +918,7 @@ class SourcingCommentsView(APIView):
                             "success": True,
                             'data': make_pagination(request, serializer, questionary_comments)
                         })
+
                     questionary_comments = self.get_comments_queryset().filter(
                         sourcingRequestEvent_id=params.get('questionary'), supplier_id=params.get('supplier')
                     ).order_by("-id")

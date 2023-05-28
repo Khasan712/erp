@@ -209,47 +209,49 @@ class SourcingCommentsQuestionarySerializer(serializers.ModelSerializer):
         fields = ('id', 'supplier', 'text')
 
 
-class SourcingCommentsQuestionaryGetSerializer(serializers.ModelSerializer):
-    documents = serializers.SerializerMethodField()
-    class Meta:
-        model = SourcingComments
-        fields = ('id', 'supplier', 'text', 'created_date', 'author', 'documents')
-
-    def get_documents(self, instance):
-        files_objs = SourcingCommentFile.objects.filter(comment_id=instance.id)
-        serializer = SourcingCommentFileSerializer(files_objs, many=True)
-        return serializer.data
-
-    def to_representation(self, instance):
-        res = super().to_representation(instance)
-        if res.get('supplier'):
-            res['supplier'] = {
-                'id': instance.supplier.id,
-                'name': instance.supplier.name
-            }
-        if res.get('author'):
-            res['author'] = {
-                'id': instance.author.id,
-                'first_name': instance.author.first_name,
-                'last_name': instance.author.last_name
-            }
-        return res
-
-
 class SourcingCommentFileSerializer(serializers.ModelSerializer):
+    creator = serializers.SerializerMethodField()
+
     class Meta:
         model = SourcingCommentFile
         fields =('id', 'uploaded_file', 'creator')
 
-    def to_representation(self, instance):
-        res = super().to_representation(instance)
-        if res.get('creator'):
-            res['creator'] = {
+    def get_creator(self, instance):
+        if instance.creator:
+            return {
                 'id': instance.creator.id,
                 'role': instance.creator.role,
                 'first_name': instance.creator.first_name,
-        }
-        return res
+            }
+        return None
+
+
+class SourcingCommentsQuestionaryGetSerializer(serializers.ModelSerializer):
+    supplier = serializers.SerializerMethodField()
+    author = serializers.SerializerMethodField()
+    documents = SourcingCommentFileSerializer(many=True, source='sourcingcommentfile_set')
+
+    class Meta:
+        model = SourcingComments
+        fields = ('id', 'supplier', 'text', 'created_date', 'author', 'documents')
+
+    def get_supplier(self, instance):
+        if instance.supplier:
+            return {
+                'id': instance.supplier.id,
+                'name': instance.supplier.name
+            }
+        return None
+
+    def get_author(self, instance):
+        if instance.author:
+            return {
+                'id': instance.author.id,
+                'first_name': instance.author.first_name,
+                'last_name': instance.author.last_name
+            }
+        return None
+
 
 class SourcingGetCommentsSerializers(serializers.ModelSerializer):
     class Meta:

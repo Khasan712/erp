@@ -266,13 +266,9 @@ class SourcingComments(models.Model):
     sourcingRequestEvent = models.ForeignKey(SourcingRequestEvent, on_delete=models.SET_NULL, null=True, blank=True)
     author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     supplier = models.ForeignKey(Supplier, on_delete=models.SET_NULL, null=True, blank=True)
-    text = models.TextField()
+    text = models.TextField(blank=True, null=True)
     parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True)
     created_date = models.DateTimeField(auto_now_add=True)
-
-    # @property
-    # def get_documents(self):
-    #     return SourcingCommentFile.objects.filter(comment_id=)
 
 
 class SourcingCommentFile(models.Model):
