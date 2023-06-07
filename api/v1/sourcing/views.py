@@ -1,3 +1,4 @@
+import datetime
 import os
 import jwt
 import xlwt
@@ -815,7 +816,8 @@ class SourcingCommentsView(APIView):
     def set_comment_files(self, files, comment_id, user_id):
         comment_files = []
         for file in files:
-            saved_file_path = os.path.join('sourcing', 'comment', 'files', file.name)
+            f_time = datetime.datetime.now()
+            saved_file_path = os.path.join('media', 'sourcing', 'comment', 'files', f'{f_time}', file.name)
             os.makedirs(os.path.dirname(saved_file_path), exist_ok=True)
             with open(saved_file_path, 'wb') as destination:
                 for chunk in file.chunks():
