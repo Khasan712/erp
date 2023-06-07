@@ -839,6 +839,7 @@ class SourcingCommentsView(APIView):
             method = params.get("method")
             # files = data.get("files", None)
             files = request.FILES.getlist('file')
+            print(files, "??????>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
             match method:
                 case 'questionary':
                     if user.role == 'supplier':
