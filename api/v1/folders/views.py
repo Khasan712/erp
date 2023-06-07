@@ -560,7 +560,6 @@ class GetOutsideInvitesApi(views.APIView):
         ).first()
 
     def get_objects_and_queryset(self):
-        print('6')
         params = self.get_params()
         folder_or_document = self.get_folder_or_document_queryset()
         invite_obj = self.get_given_access_queryset().filter(id=params['invite_id'], user_id=self.request.user.id).first()
@@ -574,7 +573,6 @@ class GetOutsideInvitesApi(views.APIView):
         }
 
     def validate_item(self, access_folder_id: int, item_obj):
-        print('7')
         """ Validate item object for know this is a child of invite object folder """
         if item_obj.parent:
             if item_obj.parent.id < access_folder_id:
@@ -587,7 +585,6 @@ class GetOutsideInvitesApi(views.APIView):
             return self.validate_item(access_folder_id, item_obj.parent)
 
     def get_filtered_data(self):
-        print('8')
         params = self.get_params()
         if not params:
             return None

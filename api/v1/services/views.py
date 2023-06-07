@@ -144,7 +144,6 @@ class ServiceDetailAPIView(APIView):
         price_serializer = ServiceCommodityConsultantPricePostSerializers(data={'price': price})
         if not price_serializer.is_valid():
             # raise ValidationError(message=f'{make_errors(price_serializer.errors)}')
-            print(price_serializer.errors)
             return price_serializer
         price_serializer.save(organization_id=organization, forService_id=service)
         return True

@@ -908,7 +908,7 @@ class ContractImportDataFromExelApi(APIView):
         for i in range(1, max_col + 1):
             cell_obj = sheet_obj.cell(row=1, column=i)
             if cell_obj.value not in self.get_contract_fields().values():
-                print(f'Rename {cell_obj.value}.')
+                pass
             field_name = value_list.index(cell_obj.value)
             queryset_fields.append(key_list[field_name])
 

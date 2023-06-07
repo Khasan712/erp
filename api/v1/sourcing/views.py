@@ -1,3 +1,4 @@
+import os
 import jwt
 import xlwt
 import openpyxl
@@ -814,15 +815,18 @@ class SourcingCommentsView(APIView):
     def set_comment_files(self, files, comment_id, user_id):
         comment_files = []
         for file in files:
-            file_value = file['file']['value']
-            comment_file = SourcingCommentFile(
-                comment_id=comment_id, creator_id=user_id
+            saved_file_path = os.path.join('sourcing', 'comment', 'files', file.name)
+            os.makedirs(os.path.dirname(saved_file_path), exist_ok=True)
+            with open(saved_file_path, 'wb') as destination:
+                for chunk in file.chunks():
+                    destination.write(chunk)
+            comment_files.append(
+                SourcingCommentFile(
+                    comment_id=comment_id,
+                    creator_id=user_id,
+                    uploaded_file=saved_file_path
+                )
             )
-            with open(file_value, 'rb') as file_rb:
-                django_file = File(file_rb)
-                comment_file.uploaded_file.save(file['file']['options']['filename'], django_file, save=False)
-
-            comment_files.append(comment_file)
         SourcingCommentFile.objects.bulk_create(comment_files)
 
     def post(self, request):
@@ -831,7 +835,8 @@ class SourcingCommentsView(APIView):
             data = request.data
             params = self.request.query_params
             method = params.get("method")
-            files = data.get("files", None)
+            # files = data.get("files", None)
+            files = request.FILES.getlist('file')
             match method:
                 case 'questionary':
                     if user.role == 'supplier':
@@ -842,7 +847,7 @@ class SourcingCommentsView(APIView):
                         with transaction.atomic():
                             serializer = SourcingCommentsQuestionarySerializer(data=data)
                             if not serializer.is_valid():
-                                raise ValueError(make_errors(serializer.errors))
+                                raise ValueError(make_errors(serializer.errors))                            
                             serializer.save(
                                 sourcingRequestEvent=questionary,
                                 supplier=event_supplier.supplier,
@@ -1157,7 +1162,6 @@ def convert_to_excel(users):
             ws.write(row_num, col_num, row[col_num], font_style)
 
     wb.save(response)
-    print(response)
     return response
 class MassDownload(APIView):
     def post(self, request):
