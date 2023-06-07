@@ -816,8 +816,9 @@ class SourcingCommentsView(APIView):
     def set_comment_files(self, files, comment_id, user_id):
         comment_files = []
         for file in files:
-            f_time = datetime.datetime.now()
-            saved_file_path = os.path.join('media', 'sourcing', 'comment', 'files', f'{f_time}', file.name)
+            f_time = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+            file_name = f"{f_time}_{file.name}"
+            saved_file_path = os.path.join('media', 'sourcing', 'comment', 'files', file_name)
             os.makedirs(os.path.dirname(saved_file_path), exist_ok=True)
             with open(saved_file_path, 'wb') as destination:
                 for chunk in file.chunks():
@@ -837,9 +838,7 @@ class SourcingCommentsView(APIView):
             data = request.data
             params = self.request.query_params
             method = params.get("method")
-            # files = data.get("files", None)
             files = request.FILES.getlist('file')
-            print(files, "??????>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
             match method:
                 case 'questionary':
                     if user.role == 'supplier':
