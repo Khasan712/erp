@@ -154,7 +154,6 @@ class CategoryRequestListAPIView(generics.ListAPIView):
 
 class SourcingRequestView(APIView):
     parser_classes = (FormParser, MultiPartParser, JSONParser)
-    # parser_class = (FileUploadParser,)
     permission_classes = (
         permissions.IsAuthenticated, IsSourcingDirector | IsContractAdministrator | IsSourcingAdministrator |
         IsCategoryManager
@@ -295,7 +294,7 @@ class SourcingRequestView(APIView):
             params = request.query_params
             sourcing_request_id = params.get('request_id')
             sourcing_request = SourcingRequest.objects.get(id=sourcing_request_id)
-            serializers = SourcingRequestSerializer(instance=sourcing_request, data=data)
+            serializers = SourcingRequestSerializer(data=data, instance=sourcing_request, partial=True)
             if not serializers.is_valid():
                 return Response(
                     {
