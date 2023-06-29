@@ -77,7 +77,7 @@ class SourcingRequestListSerializer(serializers.ModelSerializer):
 class SourcingRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = SourcingRequest
-        exclude = ('updated_at', 'sourcing_number', 'sourcing_request_status', 'organization', 'assigned_to')
+        exclude = ('updated_at', 'sourcing_number', 'organization', 'assigned_to')
 
 
 class EventInfoSerializer(serializers.ModelSerializer):
